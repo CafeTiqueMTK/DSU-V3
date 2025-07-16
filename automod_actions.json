@@ -1,0 +1,56 @@
+{
+  "1377590870903357450": {
+    "1233390879742492692": [
+      {
+        "date": "2025-07-06T10:50:48.588Z",
+        "reason": "Forbidden word: fuck"
+      },
+      {
+        "date": "2025-07-06T10:52:08.666Z",
+        "reason": "Forbidden word: fuck"
+      },
+      {
+        "date": "2025-07-06T11:03:44.677Z",
+        "reason": "discord link$"
+      }
+    ],
+    "1080177675752198265": [
+      {
+        "date": "2025-07-06T10:51:31.709Z",
+        "reason": "Forbidden word: fuck"
+      },
+      {
+        "date": "2025-07-06T11:05:08.974Z",
+        "reason": "Message spam"
+      },
+      {
+        "date": "2025-07-06T11:05:09.285Z",
+        "reason": "Message spam"
+      },
+      {
+        "date": "2025-07-06T11:12:20.730Z",
+        "reason": "Message spam"
+      },
+      {
+        "date": "2025-07-06T11:12:21.117Z",
+        "reason": "Spam: 5 messages in 5 seconds"
+      },
+      {
+        "date": "2025-07-06T11:12:26.932Z",
+        "reason": "Spam: 5 messages in 5 seconds"
+      },
+      {
+        "date": "2025-07-06T11:12:33.084Z",
+        "reason": "Spam: 5 messages in 5 seconds"
+      },
+      {
+        "date": "2025-07-06T11:12:38.108Z",
+        "reason": "Spam: 5 messages in 5 seconds"
+      },
+      {
+        "date": "2025-07-06T11:12:38.439Z",
+        "reason": "Spam: 5 messages in 5 seconds"
+      }
+    ]
+  }
+}
