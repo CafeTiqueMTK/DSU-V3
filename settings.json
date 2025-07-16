@@ -1,0 +1,93 @@
+{
+  "1377590870903357450": {
+    "automod": {
+      "enabled": true,
+      "actionChannel": "1377652226964852807",
+      "categories": {
+        "badWords": {
+          "enabled": true
+        },
+        "discordLink": {
+          "enabled": true
+        },
+        "ghostPing": {
+          "enabled": true
+        },
+        "spam": {
+          "enabled": true
+        }
+      }
+    },
+    "logs": {
+      "enabled": true,
+      "categories": {
+        "arrived": true,
+        "farewell": true,
+        "vocal": true,
+        "mod": true,
+        "automod": true
+      },
+      "channel": "1377651134964957254"
+    },
+    "level": {
+      "enabled": false,
+      "channel": "1377642487996223499",
+      "boosters": {},
+      "users": {
+        "1371524118356299989": {
+          "xp": 20,
+          "level": 1
+        },
+        "1233390879742492692": {
+          "xp": 20,
+          "level": 2
+        },
+        "526691691810258975": {
+          "xp": 20,
+          "level": 1
+        },
+        "946103266096332843": {
+          "xp": 10,
+          "level": 1
+        },
+        "1363884280010379365": {
+          "xp": 10,
+          "level": 1
+        },
+        "1391462916728819777": {
+          "xp": 10,
+          "level": 1
+        },
+        "1132413940693995541": {
+          "xp": 30,
+          "level": 1
+        },
+        "1324870586383597670": {
+          "xp": 10,
+          "level": 1
+        },
+        "1325573320673988678": {
+          "xp": 10,
+          "level": 1
+        },
+        "1080177675752198265": {
+          "xp": 10,
+          "level": 1
+        },
+        "1323065252857774171": {
+          "xp": 20,
+          "level": 1
+        }
+      },
+      "message": true
+    },
+    "autorole": {
+      "enabled": false,
+      "roleId": null
+    },
+    "farewell": {
+      "enabled": false,
+      "channel": "1377642487996223499"
+    }
+  }
+}
