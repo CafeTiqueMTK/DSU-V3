@@ -1032,20 +1032,48 @@ client.on('messageCreate', async (message) => {
     }
   }
 
-  // Anti Spam (2 secondes entre messages)
+  // Anti Spam (5 messages en 5 secondes)
   if (guildSettings.antiSpam?.enabled) {
-    if (!client.spamCooldown) client.spamCooldown = new Map();
+    if (!client.spamMessages) client.spamMessages = new Map();
     const spamKey = `${message.guild.id}:${message.author.id}`;
     const now = Date.now();
-    const lastMessage = client.spamCooldown.get(spamKey) || 0;
     
-    if (now - lastMessage < 2000) { // 2 secondes entre les messages
-      await message.delete().catch(() => {});
-      await sendAutomodWarning('Spam détecté', 'Spam');
-      return;
+    // Initialiser ou récupérer les messages de l'utilisateur
+    if (!client.spamMessages.has(spamKey)) {
+      client.spamMessages.set(spamKey, []);
     }
     
-    client.spamCooldown.set(spamKey, now);
+    const userMessages = client.spamMessages.get(spamKey);
+    
+    // Ajouter le message actuel
+    userMessages.push(now);
+    
+    // Nettoyer les anciens messages (plus de 5 secondes)
+    const fiveSecondsAgo = now - 5000;
+    const recentMessages = userMessages.filter(time => time > fiveSecondsAgo);
+    client.spamMessages.set(spamKey, recentMessages);
+    
+    // Vérifier si l'utilisateur a envoyé plus de 5 messages en 5 secondes
+    if (recentMessages.length > 5) {
+      // Supprimer tous les messages récents de l'utilisateur
+      try {
+        const messages = await message.channel.messages.fetch({ limit: 50 });
+        const userRecentMessages = messages.filter(msg => 
+          msg.author.id === message.author.id && 
+          (now - msg.createdTimestamp) < 5000
+        );
+        
+        if (userRecentMessages.size > 0) {
+          await message.channel.bulkDelete(userRecentMessages);
+          console.log(`Deleted ${userRecentMessages.size} spam messages from ${message.author.tag}`);
+        }
+      } catch (error) {
+        console.warn('Could not delete spam messages:', error);
+      }
+      
+      await sendAutomodWarning('Spam detected - multiple messages deleted', 'Spam');
+      return;
+    }
   }
 
   // Anti Invites (Discord invite links)
