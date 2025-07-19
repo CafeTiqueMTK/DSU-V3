@@ -77,114 +77,63 @@ module.exports = {
     try {
       if (sub === 'massmention') {
         const action = interaction.options.getString('action');
+        const enabled = action === 'enable';
         
-        if (action === 'status') {
-          const antiMassMention = settings[guildId].antiMassMention;
-          const embed = new EmbedBuilder()
-            .setTitle('📋 Anti Mass Mention Status')
-            .setDescription('Current anti mass mention configuration')
-            .addFields(
-              { name: '🛡️ Status', value: antiMassMention.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-              { name: '📊 Threshold', value: '5+ mentions', inline: true },
-              { name: '⚡ Action', value: 'Message deletion + DM warning', inline: true }
-            )
-            .setColor(antiMassMention.enabled ? 0x00ff99 : 0xff5555)
-            .setFooter({ text: 'DSU Anti Mass Mention System' })
-            .setTimestamp();
+        settings[guildId].antiMassMention.enabled = enabled;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 
-          await interaction.reply({ embeds: [embed], ephemeral: true });
-        } else {
-          const enabled = action === 'enable';
-          settings[guildId].antiMassMention.enabled = enabled;
-          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Mass Mention Enabled' : '❌ Anti Mass Mention Disabled')
+          .setDescription(`Anti mass mention protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Action', value: 'Message deletion + DM warning', inline: true },
+            { name: 'Threshold', value: '5+ mentions', inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
 
-          const embed = new EmbedBuilder()
-            .setTitle(enabled ? '✅ Anti Mass Mention Enabled' : '❌ Anti Mass Mention Disabled')
-            .setDescription(`Anti mass mention protection is now ${enabled ? 'active' : 'inactive'}.`)
-            .addFields(
-              { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-              { name: 'Action', value: 'Message deletion + DM warning', inline: true },
-              { name: 'Threshold', value: '5+ mentions', inline: true }
-            )
-            .setColor(enabled ? 0x00ff99 : 0xff5555)
-            .setTimestamp();
-
-          await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
+        await interaction.reply({ embeds: [embed], ephemeral: true });
 
       } else if (sub === 'spam') {
         const action = interaction.options.getString('action');
+        const enabled = action === 'enable';
         
-        if (action === 'status') {
-          const antiSpam = settings[guildId].antiSpam;
-          const embed = new EmbedBuilder()
-            .setTitle('📋 Anti Spam Status')
-            .setDescription('Current anti spam configuration')
-            .addFields(
-              { name: '🛡️ Status', value: antiSpam.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-              { name: '⏱️ Cooldown', value: '2 seconds', inline: true },
-              { name: '⚡ Action', value: 'Message deletion + DM warning', inline: true }
-            )
-            .setColor(antiSpam.enabled ? 0x00ff99 : 0xff5555)
-            .setFooter({ text: 'DSU Anti Spam System' })
-            .setTimestamp();
+        settings[guildId].antiSpam.enabled = enabled;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 
-          await interaction.reply({ embeds: [embed], ephemeral: true });
-        } else {
-          const enabled = action === 'enable';
-          settings[guildId].antiSpam.enabled = enabled;
-          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Spam Enabled' : '❌ Anti Spam Disabled')
+          .setDescription(`Anti spam protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Action', value: 'Message deletion + DM warning', inline: true },
+            { name: 'Cooldown', value: '2 seconds between messages', inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
 
-          const embed = new EmbedBuilder()
-            .setTitle(enabled ? '✅ Anti Spam Enabled' : '❌ Anti Spam Disabled')
-            .setDescription(`Anti spam protection is now ${enabled ? 'active' : 'inactive'}.`)
-            .addFields(
-              { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-              { name: 'Action', value: 'Message deletion + DM warning', inline: true },
-              { name: 'Cooldown', value: '2 seconds between messages', inline: true }
-            )
-            .setColor(enabled ? 0x00ff99 : 0xff5555)
-            .setTimestamp();
-
-          await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
+        await interaction.reply({ embeds: [embed], ephemeral: true });
 
       } else if (sub === 'invites') {
         const action = interaction.options.getString('action');
+        const enabled = action === 'enable';
         
-        if (action === 'status') {
-          const antiInvites = settings[guildId].antiInvites;
-          const embed = new EmbedBuilder()
-            .setTitle('📋 Anti Invites Status')
-            .setDescription('Current anti invites configuration')
-            .addFields(
-              { name: '🛡️ Status', value: antiInvites.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-              { name: '🔗 Detection', value: 'Discord invite links', inline: true },
-              { name: '⚡ Action', value: 'Message deletion + DM warning', inline: true }
-            )
-            .setColor(antiInvites.enabled ? 0x00ff99 : 0xff5555)
-            .setFooter({ text: 'DSU Anti Invites System' })
-            .setTimestamp();
+        settings[guildId].antiInvites.enabled = enabled;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 
-          await interaction.reply({ embeds: [embed], ephemeral: true });
-        } else {
-          const enabled = action === 'enable';
-          settings[guildId].antiInvites.enabled = enabled;
-          fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Invites Enabled' : '❌ Anti Invites Disabled')
+          .setDescription(`Anti invites protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Action', value: 'Message deletion + DM warning', inline: true },
+            { name: 'Detection', value: 'Discord invite links', inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
 
-          const embed = new EmbedBuilder()
-            .setTitle(enabled ? '✅ Anti Invites Enabled' : '❌ Anti Invites Disabled')
-            .setDescription(`Anti invites protection is now ${enabled ? 'active' : 'inactive'}.`)
-            .addFields(
-              { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-              { name: 'Action', value: 'Message deletion + DM warning', inline: true },
-              { name: 'Detection', value: 'Discord invite links', inline: true }
-            )
-            .setColor(enabled ? 0x00ff99 : 0xff5555)
-            .setTimestamp();
-
-          await interaction.reply({ embeds: [embed], ephemeral: true });
-        }
+        await interaction.reply({ embeds: [embed], ephemeral: true });
 
       }
 
