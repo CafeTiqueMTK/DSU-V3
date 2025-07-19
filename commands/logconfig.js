@@ -69,6 +69,69 @@ module.exports = {
             .setDescription('Enable or disable')
             .setRequired(true)
         )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('soundboard')
+        .setDescription('Enable or disable the "soundboard" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('tickets')
+        .setDescription('Enable or disable the "tickets" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('channels')
+        .setDescription('Enable or disable the "channels" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('economy')
+        .setDescription('Enable or disable the "economy" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('bulkdelete')
+        .setDescription('Enable or disable the "bulkdelete" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('messages')
+        .setDescription('Enable or disable the "messages" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('invites')
+        .setDescription('Enable or disable the "invites" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -90,7 +153,14 @@ module.exports = {
           mod: false,
           automod: false,
           commands: false,
-          roles: false
+          roles: false,
+          soundboard: false,
+          tickets: false,
+          channels: false,
+          economy: false,
+          bulkdelete: false,
+          messages: false,
+          invites: false
         }
       };
     }
