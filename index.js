@@ -139,6 +139,496 @@ client.on(Events.InteractionCreate, async interaction => {
     };
     await channel.send({ embeds: [embed] });
     await interaction.reply({ content: `📢 Embed sent in ${channel}.`, ephemeral: true });
+  } else if (interaction.isModalSubmit() && interaction.customId === 'ticket_embed_modal') {
+    // Handle ticket embed configuration modal submission
+    const guildId = interaction.guild.id;
+    const ticketsPath = path.join(__dirname, 'tickets.json');
+    
+    let ticketsConfig = {};
+    if (fs.existsSync(ticketsPath)) {
+      ticketsConfig = JSON.parse(fs.readFileSync(ticketsPath, 'utf-8'));
+    }
+    
+    const guildConfig = ticketsConfig[guildId];
+    if (!guildConfig || !guildConfig.setup) {
+      await interaction.reply({ content: '❌ Système de tickets non configuré.', ephemeral: true });
+      return;
+    }
+
+    const title = interaction.fields.getTextInputValue('embed_title');
+    const description = interaction.fields.getTextInputValue('embed_description');
+    const footer = interaction.fields.getTextInputValue('embed_footer') || '';
+    const buttonText = interaction.fields.getTextInputValue('button_text');
+
+    try {
+      // Mettre à jour l'embed de création de tickets
+      const embed = new EmbedBuilder()
+        .setTitle(title)
+        .setDescription(description)
+        .setColor(0x00ff99)
+        .setTimestamp();
+
+      if (footer) {
+        embed.setFooter({ text: footer });
+      }
+
+      // Créer le bouton
+      const button = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('create_ticket')
+            .setLabel(buttonText)
+            .setStyle(ButtonStyle.Primary)
+            .setEmoji('🎫')
+        );
+
+      // Mettre à jour le message existant
+      const setupChannel = interaction.guild.channels.cache.get(guildConfig.setupChannel);
+      if (setupChannel && guildConfig.setupMessage) {
+        try {
+          const message = await setupChannel.messages.fetch(guildConfig.setupMessage);
+          await message.edit({
+            embeds: [embed],
+            components: [button]
+          });
+        } catch (error) {
+          console.error('Erreur lors de la mise à jour du message:', error);
+          // Si le message n'existe plus, en créer un nouveau
+          const newMessage = await setupChannel.send({
+            embeds: [embed],
+            components: [button]
+          });
+          guildConfig.setupMessage = newMessage.id;
+        }
+      }
+
+      // Sauvegarder la configuration mise à jour
+      fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
+
+      await interaction.reply({ 
+        content: `✅ L'embed de création de tickets a été mis à jour avec succès !`, 
+        ephemeral: true 
+      });
+
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'embed:', error);
+      await interaction.reply({ 
+        content: '❌ Erreur lors de la mise à jour de l\'embed. Vérifiez les permissions du bot.', 
+        ephemeral: true 
+      });
+    }
+  } else if (interaction.isModalSubmit() && interaction.customId === 'ticket_name_modal') {
+    // Handle ticket name modal submission
+    const guildId = interaction.guild.id;
+    const ticketsPath = path.join(__dirname, 'tickets.json');
+    
+    let ticketsConfig = {};
+    if (fs.existsSync(ticketsPath)) {
+      ticketsConfig = JSON.parse(fs.readFileSync(ticketsPath, 'utf-8'));
+    }
+    
+    const guildConfig = ticketsConfig[guildId];
+    if (!guildConfig || !guildConfig.setup) {
+      await interaction.reply({ content: '❌ Système de tickets non configuré.', ephemeral: true });
+      return;
+    }
+
+    const ticketName = interaction.fields.getTextInputValue('ticket_name');
+    
+    // Générer un ID unique pour le ticket
+    const ticketId = `${guildConfig.ticketPrefix}-${Date.now()}`;
+    
+    // Créer le canal du ticket avec le nom personnalisé
+    const category = interaction.guild.channels.cache.get(guildConfig.ticketsCategory);
+    if (!category) {
+      await interaction.reply({ content: '❌ Catégorie des tickets introuvable.', ephemeral: true });
+      return;
+    }
+
+    try {
+      // Nettoyer le nom pour qu'il soit compatible avec Discord
+      const cleanName = ticketName
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-|-$/g, '')
+        .substring(0, 32);
+
+      const ticketChannel = await interaction.guild.channels.create({
+        name: cleanName,
+        type: 0, // Text channel
+        parent: category,
+        permissionOverwrites: [
+          {
+            id: interaction.guild.id,
+            deny: ['ViewChannel']
+          },
+          {
+            id: interaction.user.id,
+            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
+          },
+          {
+            id: guildConfig.supportRole,
+            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'ManageMessages']
+          }
+        ]
+      });
+
+      // Créer l'embed de bienvenue du ticket
+      const welcomeEmbed = new EmbedBuilder()
+        .setTitle(`🎫 ${ticketName}`)
+        .setDescription(guildConfig.welcomeMessage)
+        .addFields(
+          { name: '👤 Utilisateur', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+          { name: '📅 Créé le', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: true },
+          { name: '🆔 ID Ticket', value: ticketId, inline: true }
+        )
+        .setColor(0x00ff99)
+        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+        .setTimestamp();
+
+      // Créer le bouton de fermeture
+      const closeButton = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('close_ticket')
+            .setLabel('Fermer le ticket')
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji('🔒')
+        );
+
+      // Envoyer la mention du rôle support au-dessus de l'embed
+      await ticketChannel.send({
+        content: `<@&${guildConfig.supportRole}> - Nouveau ticket de ${interaction.user}`
+      });
+
+      // Envoyer l'embed de bienvenue avec le bouton de fermeture
+      await ticketChannel.send({
+        embeds: [welcomeEmbed],
+        components: [closeButton]
+      });
+
+      // Sauvegarder les informations du ticket
+      guildConfig.activeTickets[ticketId] = {
+        channelId: ticketChannel.id,
+        userId: interaction.user.id,
+        ticketName: ticketName,
+        createdAt: Date.now()
+      };
+
+      fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
+
+      await interaction.reply({ 
+        content: `✅ Votre ticket "${ticketName}" a été créé : ${ticketChannel}`, 
+        ephemeral: true 
+      });
+
+      // Log de la création du ticket
+      const logChannel = getLogChannel(interaction.guild, "tickets");
+      if (logChannel) {
+        const embed = new EmbedBuilder()
+          .setTitle('🟢 Nouveau ticket créé')
+          .addFields(
+            { name: 'Ticket ID', value: ticketId, inline: true },
+            { name: 'Nom', value: ticketName, inline: true },
+            { name: 'Utilisateur', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+            { name: 'Canal', value: ticketChannel.toString(), inline: true }
+          )
+          .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+          .setColor(0x00ff99)
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [embed] });
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la création du ticket:', error);
+      await interaction.reply({ 
+        content: '❌ Erreur lors de la création du ticket. Vérifiez les permissions du bot.', 
+        ephemeral: true 
+      });
+    }
+  } else if (interaction.isButton() && interaction.customId.startsWith('reaction_role_')) {
+    // Handle reaction role button clicks
+    const roleId = interaction.customId.replace('reaction_role_', '');
+    const member = interaction.member;
+    const role = interaction.guild.roles.cache.get(roleId);
+    
+    if (!role) {
+      await interaction.reply({ content: '❌ Rôle introuvable.', ephemeral: true });
+      return;
+    }
+
+    try {
+      if (member.roles.cache.has(roleId)) {
+        // Remove role if user already has it
+        await member.roles.remove(role);
+        await interaction.reply({ 
+          content: `❌ Rôle **${role.name}** retiré.`, 
+          ephemeral: true 
+        });
+        
+        // Log role removal
+        const logChannel = getLogChannel(interaction.guild, "roles");
+        if (logChannel) {
+          const embed = new EmbedBuilder()
+            .setTitle('🔴 Rôle retiré')
+            .addFields(
+              { name: 'Membre', value: `${member.user.tag} (<@${member.user.id}>)`, inline: true },
+              { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
+              { name: 'Méthode', value: 'Bouton réaction', inline: true }
+            )
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .setColor(0xff5555)
+            .setTimestamp(new Date());
+          await logChannel.send({ embeds: [embed] });
+        }
+      } else {
+        // Add role if user doesn't have it
+        await member.roles.add(role);
+        await interaction.reply({ 
+          content: `✅ Rôle **${role.name}** ajouté.`, 
+          ephemeral: true 
+        });
+        
+        // Log role addition
+        const logChannel = getLogChannel(interaction.guild, "roles");
+        if (logChannel) {
+          const embed = new EmbedBuilder()
+            .setTitle('🟢 Rôle ajouté')
+            .addFields(
+              { name: 'Membre', value: `${member.user.tag} (<@${member.user.id}>)`, inline: true },
+              { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
+              { name: 'Méthode', value: 'Bouton réaction', inline: true }
+            )
+            .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+            .setColor(0x00ff99)
+            .setTimestamp(new Date());
+          await logChannel.send({ embeds: [embed] });
+        }
+      }
+    } catch (error) {
+      console.error('Error handling reaction role:', error);
+      await interaction.reply({ 
+        content: '❌ Erreur lors de la gestion du rôle. Vérifiez les permissions du bot.', 
+        ephemeral: true 
+      });
+    }
+  } else if (interaction.isButton() && interaction.customId === 'create_ticket') {
+    // Handle ticket creation button
+    const guildId = interaction.guild.id;
+    const ticketsPath = path.join(__dirname, 'tickets.json');
+    
+    // Charger la configuration des tickets
+    let ticketsConfig = {};
+    if (fs.existsSync(ticketsPath)) {
+      ticketsConfig = JSON.parse(fs.readFileSync(ticketsPath, 'utf-8'));
+    }
+    
+    const guildConfig = ticketsConfig[guildId];
+    if (!guildConfig || !guildConfig.setup) {
+      await interaction.reply({ content: '❌ Système de tickets non configuré.', ephemeral: true });
+      return;
+    }
+
+    // Vérifier si l'utilisateur a déjà un ticket ouvert
+    const existingTicket = Object.values(guildConfig.activeTickets || {}).find(
+      ticket => ticket.userId === interaction.user.id
+    );
+    
+    if (existingTicket) {
+      const channel = interaction.guild.channels.cache.get(existingTicket.channelId);
+      if (channel) {
+        await interaction.reply({ 
+          content: `❌ Vous avez déjà un ticket ouvert : ${channel}`, 
+          ephemeral: true 
+        });
+        return;
+      }
+    }
+
+    // Créer le modal pour le nom du ticket
+    const modal = new ModalBuilder()
+      .setCustomId('ticket_name_modal')
+      .setTitle('Nommer votre ticket');
+
+    const ticketNameInput = new TextInputBuilder()
+      .setCustomId('ticket_name')
+      .setLabel('Nom du ticket')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('Ex: Bug Minecraft, Question Discord, Suggestion...')
+      .setRequired(true)
+      .setMaxLength(32);
+
+    const firstActionRow = new ActionRowBuilder().addComponents(ticketNameInput);
+    modal.addComponents(firstActionRow);
+    await interaction.showModal(modal);
+    
+    // Créer le canal du ticket
+    const category = interaction.guild.channels.cache.get(guildConfig.ticketsCategory);
+    if (!category) {
+      await interaction.reply({ content: '❌ Catégorie des tickets introuvable.', ephemeral: true });
+      return;
+    }
+
+    try {
+      const ticketChannel = await interaction.guild.channels.create({
+        name: ticketId,
+        type: 0, // Text channel
+        parent: category,
+        permissionOverwrites: [
+          {
+            id: interaction.guild.id,
+            deny: ['ViewChannel']
+          },
+          {
+            id: interaction.user.id,
+            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
+          },
+          {
+            id: guildConfig.supportRole,
+            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'ManageMessages']
+          }
+        ]
+      });
+
+      // Créer l'embed de bienvenue du ticket
+      const welcomeEmbed = new EmbedBuilder()
+        .setTitle(`🎫 Ticket ${ticketId}`)
+        .setDescription(guildConfig.welcomeMessage)
+        .addFields(
+          { name: '👤 Utilisateur', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+          { name: '📅 Créé le', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: true }
+        )
+        .setColor(0x00ff99)
+        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+        .setTimestamp();
+
+      // Créer le bouton de fermeture
+      const closeButton = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId('close_ticket')
+            .setLabel('Fermer le ticket')
+            .setStyle(ButtonStyle.Danger)
+            .setEmoji('🔒')
+        );
+
+      // Envoyer la mention du rôle support au-dessus de l'embed
+      await ticketChannel.send({
+        content: `<@&${guildConfig.supportRole}> - Nouveau ticket de ${interaction.user}`
+      });
+
+      // Envoyer l'embed de bienvenue avec le bouton de fermeture
+      await ticketChannel.send({
+        embeds: [welcomeEmbed],
+        components: [closeButton]
+      });
+
+      // Sauvegarder les informations du ticket
+      guildConfig.activeTickets[ticketId] = {
+        channelId: ticketChannel.id,
+        userId: interaction.user.id,
+        createdAt: Date.now()
+      };
+
+      fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
+
+      await interaction.reply({ 
+        content: `✅ Votre ticket a été créé : ${ticketChannel}`, 
+        ephemeral: true 
+      });
+
+      // Log de la création du ticket
+      const logChannel = getLogChannel(interaction.guild, "tickets");
+      if (logChannel) {
+        const embed = new EmbedBuilder()
+          .setTitle('🟢 Nouveau ticket créé')
+          .addFields(
+            { name: 'Ticket ID', value: ticketId, inline: true },
+            { name: 'Utilisateur', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+            { name: 'Canal', value: ticketChannel.toString(), inline: true }
+          )
+          .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+          .setColor(0x00ff99)
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [embed] });
+      }
+
+    } catch (error) {
+      console.error('Erreur lors de la création du ticket:', error);
+      await interaction.reply({ 
+        content: '❌ Erreur lors de la création du ticket. Vérifiez les permissions du bot.', 
+        ephemeral: true 
+      });
+    }
+  } else if (interaction.isButton() && interaction.customId === 'close_ticket') {
+    // Handle ticket close button
+    const guildId = interaction.guild.id;
+    const ticketsPath = path.join(__dirname, 'tickets.json');
+    
+    let ticketsConfig = {};
+    if (fs.existsSync(ticketsPath)) {
+      ticketsConfig = JSON.parse(fs.readFileSync(ticketsPath, 'utf-8'));
+    }
+    
+    const guildConfig = ticketsConfig[guildId];
+    if (!guildConfig) {
+      await interaction.reply({ content: '❌ Configuration des tickets introuvable.', ephemeral: true });
+      return;
+    }
+
+    // Trouver le ticket correspondant au canal
+    const ticketId = Object.keys(guildConfig.activeTickets || {}).find(
+      id => guildConfig.activeTickets[id].channelId === interaction.channel.id
+    );
+
+    if (!ticketId) {
+      await interaction.reply({ content: '❌ Ticket introuvable.', ephemeral: true });
+      return;
+    }
+
+    const ticketData = guildConfig.activeTickets[ticketId];
+    
+    // Créer l'embed de fermeture
+    const closeEmbed = new EmbedBuilder()
+      .setTitle('🎫 Ticket fermé')
+      .setDescription(`Ticket fermé par ${interaction.user.tag}`)
+      .setColor(0xff5555)
+      .setTimestamp();
+
+    await interaction.channel.send({ embeds: [closeEmbed] });
+
+    // Supprimer le canal après 5 secondes
+    setTimeout(async () => {
+      try {
+        await interaction.channel.delete();
+      } catch (error) {
+        console.error('Erreur lors de la suppression du canal:', error);
+      }
+    }, 5000);
+
+    // Supprimer le ticket de la configuration
+    delete guildConfig.activeTickets[ticketId];
+    fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
+
+    await interaction.reply({ content: '✅ Ticket fermé. Le canal sera supprimé dans 5 secondes.', ephemeral: true });
+
+    // Log de la fermeture du ticket
+    const logChannel = getLogChannel(interaction.guild, "tickets");
+    if (logChannel) {
+      const user = await interaction.client.users.fetch(ticketData.userId).catch(() => null);
+      const embed = new EmbedBuilder()
+        .setTitle('🔴 Ticket fermé')
+        .addFields(
+          { name: 'Ticket ID', value: ticketId, inline: true },
+          { name: 'Utilisateur', value: user ? user.tag : 'Utilisateur inconnu', inline: true },
+          { name: 'Fermé par', value: interaction.user.tag, inline: true },
+          { name: 'Canal', value: interaction.channel.name, inline: true }
+        )
+        .setColor(0xff5555)
+        .setTimestamp(new Date());
+      await logChannel.send({ embeds: [embed] });
+    }
   }
 });
 
@@ -710,6 +1200,153 @@ client.on('messageDelete', async (message) => {
     };
 
     await applySanction(guildSettings.categories.ghostPing.sanction, 'Ghost ping');
+  }
+});
+
+// Gestion des événements de réaction pour les rôles réaction avec émojis
+client.on('messageReactionAdd', async (reaction, user) => {
+  // Ignorer les réactions du bot
+  if (user.bot) return;
+  
+  // Récupérer l'utilisateur complet si nécessaire
+  if (reaction.partial) {
+    try {
+      await reaction.fetch();
+    } catch (error) {
+      console.error('Erreur lors de la récupération de la réaction:', error);
+      return;
+    }
+  }
+
+  // Récupérer le message complet si nécessaire
+  if (reaction.message.partial) {
+    try {
+      await reaction.message.fetch();
+    } catch (error) {
+      console.error('Erreur lors de la récupération du message:', error);
+      return;
+    }
+  }
+
+  const guildId = reaction.message.guild?.id;
+  if (!guildId) return;
+
+  const reactionRolesEmojiPath = path.join(__dirname, 'reaction_roles_emoji.json');
+  
+  // Charger la configuration des rôles réaction avec émojis
+  let reactionRolesEmoji = {};
+  if (fs.existsSync(reactionRolesEmojiPath)) {
+    reactionRolesEmoji = JSON.parse(fs.readFileSync(reactionRolesEmojiPath, 'utf-8'));
+  }
+
+  const guildConfig = reactionRolesEmoji[guildId];
+  if (!guildConfig || !guildConfig[reaction.message.id]) return;
+
+  const config = guildConfig[reaction.message.id];
+  const emojiIndex = config.emojis.indexOf(reaction.emoji.name || reaction.emoji.toString());
+  
+  if (emojiIndex === -1) return;
+
+  const roleId = config.roles[emojiIndex].id;
+  const role = reaction.message.guild.roles.cache.get(roleId);
+  const member = await reaction.message.guild.members.fetch(user.id);
+
+  if (!role || !member) return;
+
+  try {
+    await member.roles.add(role);
+    console.log(`Rôle ${role.name} ajouté à ${user.tag} via réaction`);
+
+    // Log de l'ajout de rôle
+    const logChannel = getLogChannel(reaction.message.guild, "roles");
+    if (logChannel) {
+      const embed = new EmbedBuilder()
+        .setTitle('🟢 Rôle ajouté')
+        .addFields(
+          { name: 'Membre', value: `${user.tag} (<@${user.id}>)`, inline: true },
+          { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
+          { name: 'Méthode', value: 'Réaction émoji', inline: true }
+        )
+        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+        .setColor(0x00ff99)
+        .setTimestamp(new Date());
+      await logChannel.send({ embeds: [embed] });
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'ajout du rôle via réaction:', error);
+  }
+});
+
+client.on('messageReactionRemove', async (reaction, user) => {
+  // Ignorer les réactions du bot
+  if (user.bot) return;
+  
+  // Récupérer l'utilisateur complet si nécessaire
+  if (reaction.partial) {
+    try {
+      await reaction.fetch();
+    } catch (error) {
+      console.error('Erreur lors de la récupération de la réaction:', error);
+      return;
+    }
+  }
+
+  // Récupérer le message complet si nécessaire
+  if (reaction.message.partial) {
+    try {
+      await reaction.message.fetch();
+    } catch (error) {
+      console.error('Erreur lors de la récupération du message:', error);
+      return;
+    }
+  }
+
+  const guildId = reaction.message.guild?.id;
+  if (!guildId) return;
+
+  const reactionRolesEmojiPath = path.join(__dirname, 'reaction_roles_emoji.json');
+  
+  // Charger la configuration des rôles réaction avec émojis
+  let reactionRolesEmoji = {};
+  if (fs.existsSync(reactionRolesEmojiPath)) {
+    reactionRolesEmoji = JSON.parse(fs.readFileSync(reactionRolesEmojiPath, 'utf-8'));
+  }
+
+  const guildConfig = reactionRolesEmoji[guildId];
+  if (!guildConfig || !guildConfig[reaction.message.id]) return;
+
+  const config = guildConfig[reaction.message.id];
+  const emojiIndex = config.emojis.indexOf(reaction.emoji.name || reaction.emoji.toString());
+  
+  if (emojiIndex === -1) return;
+
+  const roleId = config.roles[emojiIndex].id;
+  const role = reaction.message.guild.roles.cache.get(roleId);
+  const member = await reaction.message.guild.members.fetch(user.id);
+
+  if (!role || !member) return;
+
+  try {
+    await member.roles.remove(role);
+    console.log(`Rôle ${role.name} retiré de ${user.tag} via réaction`);
+
+    // Log du retrait de rôle
+    const logChannel = getLogChannel(reaction.message.guild, "roles");
+    if (logChannel) {
+      const embed = new EmbedBuilder()
+        .setTitle('🔴 Rôle retiré')
+        .addFields(
+          { name: 'Membre', value: `${user.tag} (<@${user.id}>)`, inline: true },
+          { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
+          { name: 'Méthode', value: 'Réaction émoji', inline: true }
+        )
+        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+        .setColor(0xff5555)
+        .setTimestamp(new Date());
+      await logChannel.send({ embeds: [embed] });
+    }
+  } catch (error) {
+    console.error('Erreur lors du retrait du rôle via réaction:', error);
   }
 });
 
