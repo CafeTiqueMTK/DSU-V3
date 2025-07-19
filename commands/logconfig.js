@@ -132,12 +132,19 @@ module.exports = {
             .setDescription('Enable or disable')
             .setRequired(true)
         )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('enableall')
+        .setDescription('Enable all log categories at once')
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('disableall')
+        .setDescription('Disable all log categories at once')
     ),
 
   async execute(interaction) {
     const guildId = interaction.guild.id;
     const sub = interaction.options.getSubcommand();
-    const state = interaction.options.getBoolean('state');
 
     if (!fs.existsSync(settingsPath)) fs.writeFileSync(settingsPath, '{}');
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
@@ -165,6 +172,43 @@ module.exports = {
       };
     }
 
+    // Handle enableall and disableall commands
+    if (sub === 'enableall') {
+      const categories = Object.keys(settings[guildId].logs.categories);
+      categories.forEach(category => {
+        settings[guildId].logs.categories[category] = true;
+      });
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      
+      const embed = new EmbedBuilder()
+        .setTitle('✅ All Categories Enabled')
+        .setDescription(`All ${categories.length} log categories have been enabled:\n\n${categories.map(cat => `• \`${cat}\``).join('\n')}`)
+        .setColor(0x00ff99)
+        .setFooter({ text: 'DSU Logger System' })
+        .setTimestamp(new Date());
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    if (sub === 'disableall') {
+      const categories = Object.keys(settings[guildId].logs.categories);
+      categories.forEach(category => {
+        settings[guildId].logs.categories[category] = false;
+      });
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      
+      const embed = new EmbedBuilder()
+        .setTitle('❌ All Categories Disabled')
+        .setDescription(`All ${categories.length} log categories have been disabled:\n\n${categories.map(cat => `• \`${cat}\``).join('\n')}`)
+        .setColor(0xff5555)
+        .setFooter({ text: 'DSU Logger System' })
+        .setTimestamp(new Date());
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+      return;
+    }
+
+    // Handle individual category commands
+    const state = interaction.options.getBoolean('state');
     if (settings[guildId].logs.categories.hasOwnProperty(sub)) {
       settings[guildId].logs.categories[sub] = state;
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
