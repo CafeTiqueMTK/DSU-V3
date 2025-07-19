@@ -1053,7 +1053,31 @@ client.on('messageCreate', async (message) => {
     const discordLinkRegex = /discord\.gg\/[a-zA-Z0-9]+/;
     if (discordLinkRegex.test(message.content)) {
       await message.delete().catch(() => {});
-      await sendAutomodWarning('Lien d\'invitation Discord détecté', 'Discord Invite');
+      await sendAutomodWarning('Discord invitation link detected', 'Discord Invite');
+      return;
+    }
+  }
+
+  // Anti Links (All external links)
+  if (guildSettings.antiLinks?.enabled) {
+    const linkRegex = /https?:\/\/[^\s]+/;
+    if (linkRegex.test(message.content)) {
+      await message.delete().catch(() => {});
+      await sendAutomodWarning('External link detected', 'External Link');
+      return;
+    }
+  }
+
+  // Anti Keywords (Custom blacklisted words)
+  if (guildSettings.antiKeywords?.enabled && guildSettings.antiKeywords.keywords?.length > 0) {
+    const content = message.content.toLowerCase();
+    const foundKeyword = guildSettings.antiKeywords.keywords.find(keyword => 
+      content.includes(keyword.toLowerCase())
+    );
+    
+    if (foundKeyword) {
+      await message.delete().catch(() => {});
+      await sendAutomodWarning(`Blacklisted keyword detected: "${foundKeyword}"`, 'Blacklisted Keyword');
       return;
     }
   }

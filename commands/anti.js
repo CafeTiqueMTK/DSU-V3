@@ -45,6 +45,32 @@ module.exports = {
             )
             .setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub.setName('links')
+        .setDescription('Configure anti links protection')
+        .addStringOption(opt =>
+          opt.setName('action')
+            .setDescription('Enable or disable anti links')
+            .addChoices(
+              { name: 'Enable', value: 'enable' },
+              { name: 'Disable', value: 'disable' }
+            )
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(sub =>
+      sub.setName('keywords')
+        .setDescription('Configure anti keywords protection')
+        .addStringOption(opt =>
+          opt.setName('action')
+            .setDescription('Enable or disable anti keywords')
+            .addChoices(
+              { name: 'Enable', value: 'enable' },
+              { name: 'Disable', value: 'disable' }
+            )
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -72,6 +98,12 @@ module.exports = {
     }
     if (!settings[guildId].antiInvites) {
       settings[guildId].antiInvites = { enabled: false };
+    }
+    if (!settings[guildId].antiLinks) {
+      settings[guildId].antiLinks = { enabled: false };
+    }
+    if (!settings[guildId].antiKeywords) {
+      settings[guildId].antiKeywords = { enabled: false, keywords: [] };
     }
 
     try {
@@ -129,6 +161,46 @@ module.exports = {
             { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
             { name: 'Action', value: 'Message deletion + DM warning', inline: true },
             { name: 'Detection', value: 'Discord invite links', inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+
+      } else if (sub === 'links') {
+        const action = interaction.options.getString('action');
+        const enabled = action === 'enable';
+        
+        settings[guildId].antiLinks.enabled = enabled;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Links Enabled' : '❌ Anti Links Disabled')
+          .setDescription(`Anti links protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Action', value: 'Message deletion + DM warning', inline: true },
+            { name: 'Detection', value: 'All external links', inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+
+      } else if (sub === 'keywords') {
+        const action = interaction.options.getString('action');
+        const enabled = action === 'enable';
+        
+        settings[guildId].antiKeywords.enabled = enabled;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Keywords Enabled' : '❌ Anti Keywords Disabled')
+          .setDescription(`Anti keywords protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Action', value: 'Message deletion + DM warning', inline: true },
+            { name: 'Keywords', value: `${settings[guildId].antiKeywords.keywords.length} blacklisted`, inline: true }
           )
           .setColor(enabled ? 0x00ff99 : 0xff5555)
           .setTimestamp();
