@@ -927,91 +927,135 @@ client.on('guildRoleUpdate', async (oldRole, newRole) => {
   }
 });
 
-// Gestionnaire d'événements automod Discord
-client.on('autoModerationActionExecution', async (autoModerationAction) => {
+// Nouveau système Automod - Gestion des messages
+client.on('messageCreate', async (message) => {
+  if (!message.guild || message.author?.bot) return;
+
+  // Recharge settings à chaque message
+  let settings;
   try {
-    const { guild, ruleId, ruleTriggerType, userId, channelId, messageId, alertSystemMessageId, content, matchedKeyword, matchedContent } = autoModerationAction;
-    
-    // Récupérer les informations du membre
-    const member = await guild.members.fetch(userId).catch(() => null);
-    if (!member) return;
+    settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+  } catch {
+    settings = {};
+  }
+  const guildSettings = settings[message.guild.id];
+  if (!guildSettings) return;
 
-    // Récupérer les informations de la règle
-    const rule = await guild.autoModerationRules.fetch(ruleId).catch(() => null);
-    if (!rule) return;
-
-    // Déterminer le type de violation
-    let violationType = 'Unknown';
-    let reason = 'Automod violation';
-    
-    switch (ruleTriggerType) {
-      case 1: // KEYWORD
-        violationType = 'Forbidden Keyword';
-        reason = `Used forbidden keyword: "${matchedKeyword}"`;
-        break;
-      case 2: // HARMFUL_LINK
-        violationType = 'Harmful Link';
-        reason = 'Posted a harmful link';
-        break;
-      case 3: // SPAM
-        violationType = 'Spam';
-        reason = 'Spam detected';
-        break;
-      case 4: // KEYWORD_PRESET
-        violationType = 'Inappropriate Content';
-        reason = 'Inappropriate content detected';
-        break;
-      case 5: // MENTION_SPAM
-        violationType = 'Mention Spam';
-        reason = 'Excessive mentions detected';
-        break;
+  const member = message.member;
+  
+  // Fonction pour envoyer un avertissement DM et notification
+  const sendAutomodWarning = async (reason, violationType) => {
+    // Cooldown anti-abus : 10 secondes entre deux avertissements pour le même utilisateur
+    if (!client.automodCooldown) client.automodCooldown = new Map();
+    const cooldownKey = `${message.guild.id}:${message.author.id}`;
+    const now = Date.now();
+    const lastWarning = client.automodCooldown.get(cooldownKey) || 0;
+    if (now - lastWarning < 10000) {
+      console.log(`[AUTOMOD] Cooldown: warning skipped for ${message.author.tag}`);
+      return;
     }
+    client.automodCooldown.set(cooldownKey, now);
 
-    // Envoyer un message d'avertissement au membre
+          // Message privé à l'utilisateur
+      try {
+        const dmEmbed = new EmbedBuilder()
+          .setTitle('⚠️ Warning - Violation Detected')
+          .setDescription(`Hello ${message.author.username},\n\nYour message has been detected as a violation of our rules.\n\n**Violation Type:** ${violationType}\n**Reason:** ${reason}\n\n**Please be careful to:**\n• Respect server rules\n• Avoid spam behavior\n• Do not excessively mention other users\n• Do not share Discord invitation links\n\nThank you for your understanding and respect for the community rules.\n\n*This warning is automatic. In case of recurrence, more severe sanctions may be applied.*`)
+          .setColor(0xffa500)
+          .setFooter({ text: `${message.guild.name} - Automod System`, iconURL: message.guild.iconURL() })
+          .setTimestamp(new Date());
+
+        await message.author.send({ embeds: [dmEmbed] });
+        console.log(`Sent automod warning to ${message.author.tag} for ${violationType}`);
+      } catch (dmError) {
+        console.warn(`Could not send DM to ${message.author.tag}:`, dmError);
+      }
+
+    // Notification dans le canal d'action Automod
     try {
-      const warningEmbed = new EmbedBuilder()
-        .setTitle('⚠️ Automod Warning')
-        .setDescription(`Your message has been flagged by our automod system.`)
-        .addFields(
-          { name: 'Violation Type', value: violationType, inline: true },
-          { name: 'Reason', value: reason, inline: true },
-          { name: 'Server', value: guild.name, inline: false },
-          { name: 'Channel', value: `<#${channelId}>`, inline: false }
-        )
-        .setColor(0xffa500)
-        .setFooter({ text: 'Please respect the server rules to avoid further actions' })
-        .setTimestamp(new Date());
+      const actionChannelId = guildSettings.automod?.actionChannel;
+      if (actionChannelId) {
+        const actionChannel = message.guild.channels.cache.get(actionChannelId);
+        if (actionChannel) {
+          const actionEmbed = new EmbedBuilder()
+            .setTitle('🚨 Automod Action')
+            .setDescription(`**${message.author.tag}** triggered an Automod protection`)
+            .addFields(
+              { name: '👤 User', value: `<@${message.author.id}>`, inline: true },
+              { name: '🚫 Violation', value: violationType, inline: true },
+              { name: '📝 Reason', value: reason, inline: false },
+              { name: '📍 Channel', value: `<#${message.channel.id}>`, inline: true },
+              { name: '⏰ Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: true }
+            )
+            .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+            .setColor(0xff0000)
+            .setFooter({ text: 'DSU Automod System' })
+            .setTimestamp(new Date());
 
-      await member.send({ embeds: [warningEmbed] });
-      console.log(`Sent automod warning to ${member.user.tag} for ${violationType}`);
-    } catch (dmError) {
-      console.warn(`Could not send DM to ${member.user.tag}:`, dmError);
+          await actionChannel.send({ embeds: [actionEmbed] });
+          console.log(`Sent automod notification to action channel for ${message.author.tag}`);
+        }
+      }
+    } catch (e) {
+      console.warn('Error sending automod notification to action channel:', e);
     }
 
-    // Logger l'action automod
-    const logChannel = getLogChannel(guild, "automod");
+    // Log dans le canal de logs
+    const logChannel = getLogChannel(message.guild, "automod");
     if (logChannel) {
       const logEmbed = new EmbedBuilder()
         .setTitle('🚨 Automod Action')
         .addFields(
-          { name: 'Member', value: `${member.user.tag} (<@${userId}>)`, inline: true },
-          { name: 'Rule', value: rule.name, inline: true },
+          { name: 'Member', value: `${message.author.tag} (<@${message.author.id}>)`, inline: true },
           { name: 'Violation', value: violationType, inline: true },
-          { name: 'Channel', value: `<#${channelId}>`, inline: true },
+          { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
           { name: 'Reason', value: reason, inline: false },
           { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
         )
-        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
         .setColor(0xff0000)
-        .setFooter({ text: 'Discord Automod' })
+        .setFooter({ text: 'DSU Automod System' })
         .setTimestamp(new Date());
 
       await logChannel.send({ embeds: [logEmbed] });
-      console.log(`Logged automod action for ${member.user.tag}`);
+      console.log(`Logged automod action for ${message.author.tag}`);
     }
+  };
 
-  } catch (error) {
-    console.error('Error handling automod action:', error);
+  // Anti Mass Mention (5+ mentions)
+  if (guildSettings.antiMassMention?.enabled) {
+    const mentionCount = message.mentions.users.size + message.mentions.roles.size;
+    if (mentionCount >= 5) {
+      await message.delete().catch(() => {});
+      await sendAutomodWarning('Mentions excessives détectées', 'Mass Mention');
+      return;
+    }
+  }
+
+  // Anti Spam (2 secondes entre messages)
+  if (guildSettings.antiSpam?.enabled) {
+    if (!client.spamCooldown) client.spamCooldown = new Map();
+    const spamKey = `${message.guild.id}:${message.author.id}`;
+    const now = Date.now();
+    const lastMessage = client.spamCooldown.get(spamKey) || 0;
+    
+    if (now - lastMessage < 2000) { // 2 secondes entre les messages
+      await message.delete().catch(() => {});
+      await sendAutomodWarning('Spam détecté', 'Spam');
+      return;
+    }
+    
+    client.spamCooldown.set(spamKey, now);
+  }
+
+  // Anti Invites (Discord invite links)
+  if (guildSettings.antiInvites?.enabled) {
+    const discordLinkRegex = /discord\.gg\/[a-zA-Z0-9]+/;
+    if (discordLinkRegex.test(message.content)) {
+      await message.delete().catch(() => {});
+      await sendAutomodWarning('Lien d\'invitation Discord détecté', 'Discord Invite');
+      return;
+    }
   }
 });
 
