@@ -51,7 +51,7 @@ class UpdateChecker {
         if (!channel) continue;
 
         // Check for new commits
-        await this.checkGuildUpdates(guild, channel, config);
+        await this.checkGuildUpdates(guild, channel, config, guildId);
       }
     } catch (error) {
       console.error('Error in update checker:', error);
@@ -59,7 +59,7 @@ class UpdateChecker {
   }
 
   // Check updates for a specific guild
-  async checkGuildUpdates(guild, channel, config) {
+  async checkGuildUpdates(guild, channel, config, guildId) {
     try {
       // Get repository info from environment or config
       const repoOwner = process.env.GITHUB_REPO_OWNER || 'CafeTiqueMTK';
@@ -197,7 +197,7 @@ class UpdateChecker {
         return { success: false, message: 'Channel not found' };
       }
 
-      await this.checkGuildUpdates(guild, channel, config);
+      await this.checkGuildUpdates(guild, channel, config, guildId);
       return { success: true, message: 'Manual check completed' };
 
     } catch (error) {
