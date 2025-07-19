@@ -10,15 +10,33 @@ module.exports = {
       await interaction.deferReply();
 
       // GitHub API endpoint for commits
-      const repoOwner = 'ThomasSirurguet'; // Replace with actual repository owner
+      const repoOwner = 'CafeTiqueMTK'; // Replace with actual repository owner
       const repoName = 'DSU-V3'; // Replace with actual repository name
       const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/commits?per_page=3`;
 
+      // GitHub API headers (add token if available)
+      const headers = {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': 'DSU-Bot/1.0'
+      };
+      
+      // Add token if available (for private repos)
+      const githubToken = process.env.GITHUB_TOKEN;
+      if (githubToken) {
+        headers['Authorization'] = `token ${githubToken}`;
+      }
+
       // Fetch commits from GitHub API
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, { headers });
       
       if (!response.ok) {
-        throw new Error(`GitHub API error: ${response.status}`);
+        if (response.status === 404) {
+          throw new Error(`Repository not found: ${repoOwner}/${repoName}. Please check if the repository exists and is public.`);
+        } else if (response.status === 403) {
+          throw new Error('GitHub API rate limit exceeded. Please try again later.');
+        } else {
+          throw new Error(`GitHub API error: ${response.status} - ${response.statusText}`);
+        }
       }
 
       const commits = await response.json();
@@ -75,10 +93,26 @@ module.exports = {
     } catch (error) {
       console.error('Error in changelog command:', error);
       
+      let errorMessage = 'Failed to fetch commits from GitHub.';
+      
+      if (error.message.includes('Repository not found')) {
+        errorMessage = `❌ **Repository not found or private!**\n\nThe repository \`${repoOwner}/${repoName}\` doesn't exist or is private.\n\n**To fix this:**\n• Make the repository public on GitHub\n• Or add a GitHub token to access private repos\n• Or update the repository name in the bot code`;
+      } else if (error.message.includes('rate limit')) {
+        errorMessage = '⏰ **GitHub API rate limit exceeded!**\n\nPlease try again in a few minutes.';
+      } else if (error.message.includes('Network')) {
+        errorMessage = '🌐 **Network error!**\n\nPlease check your internet connection and try again.';
+      } else {
+        errorMessage = `❌ **GitHub API Error:** ${error.message}`;
+      }
+      
       const errorEmbed = new EmbedBuilder()
         .setTitle('❌ Changelog Error')
-        .setDescription('Failed to fetch commits from GitHub. This could be due to:\n• Repository not found\n• API rate limit exceeded\n• Network issues')
+        .setDescription(errorMessage)
+        .addFields(
+          { name: '🔧 Solution', value: 'Contact the bot administrator to configure the correct repository.', inline: false }
+        )
         .setColor(0xff5555)
+        .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
         .setTimestamp();
 
       await interaction.editReply({ embeds: [errorEmbed] });
