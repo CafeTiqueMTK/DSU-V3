@@ -153,7 +153,7 @@ module.exports = {
             { name: '📢 Action Channel', value: actionChannel, inline: true },
             { name: '\u200b', value: '\u200b', inline: true },
             { name: '📢 Anti Mass Mention', value: `${antiMassMention.enabled ? '✅ Enabled' : '❌ Disabled'}\nThreshold: 5+ mentions`, inline: true },
-            { name: '🔄 Anti Spam', value: `${antiSpam.enabled ? '✅ Enabled' : '❌ Disabled'}\nCooldown: 2 seconds`, inline: true },
+            { name: '🔄 Anti Spam', value: `${antiSpam.enabled ? '✅ Enabled' : '❌ Disabled'}\nThreshold: 5+ messages in 5s`, inline: true },
             { name: '🔗 Anti Invites', value: `${antiInvites.enabled ? '✅ Enabled' : '❌ Disabled'}\nDetection: Discord links`, inline: true },
             { name: '🌐 Anti Links', value: `${antiLinks.enabled ? '✅ Enabled' : '❌ Disabled'}\nDetection: External links`, inline: true },
             { name: '🔤 Anti Keywords', value: `${antiKeywords.enabled ? '✅ Enabled' : '❌ Disabled'}\nKeywords: ${antiKeywords.keywords.length}`, inline: true }

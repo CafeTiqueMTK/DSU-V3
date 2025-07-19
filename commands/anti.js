@@ -140,7 +140,7 @@ module.exports = {
           .addFields(
             { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
             { name: 'Action', value: 'Message deletion + DM warning', inline: true },
-            { name: 'Cooldown', value: '2 seconds between messages', inline: true }
+            { name: 'Threshold', value: '5+ messages in 5 seconds', inline: true }
           )
           .setColor(enabled ? 0x00ff99 : 0xff5555)
           .setTimestamp();
