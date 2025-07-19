@@ -25,7 +25,16 @@
         "farewell": true,
         "vocal": true,
         "mod": true,
-        "automod": true
+        "automod": true,
+        "commands": true,
+        "roles": true,
+        "soundboard": true,
+        "tickets": true,
+        "channels": true,
+        "economy": true,
+        "bulkdelete": true,
+        "messages": true,
+        "invites": true
       },
       "channel": "1377651134964957254"
     },

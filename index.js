@@ -323,16 +323,16 @@ client.on(Events.InteractionCreate, async interaction => {
         ephemeral: true 
       });
 
-      // Log de la création du ticket
+      // Log ticket creation
       const logChannel = getLogChannel(interaction.guild, "tickets");
       if (logChannel) {
         const embed = new EmbedBuilder()
-          .setTitle('🟢 Nouveau ticket créé')
+          .setTitle('🟢 New Ticket Created')
           .addFields(
             { name: 'Ticket ID', value: ticketId, inline: true },
-            { name: 'Nom', value: ticketName, inline: true },
-            { name: 'Utilisateur', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
-            { name: 'Canal', value: ticketChannel.toString(), inline: true }
+            { name: 'Name', value: ticketName, inline: true },
+            { name: 'User', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+            { name: 'Channel', value: ticketChannel.toString(), inline: true }
           )
           .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
           .setColor(0x00ff99)
@@ -363,7 +363,7 @@ client.on(Events.InteractionCreate, async interaction => {
         // Remove role if user already has it
         await member.roles.remove(role);
         await interaction.reply({ 
-          content: `❌ Rôle **${role.name}** retiré.`, 
+          content: `❌ Role **${role.name}** removed.`, 
           ephemeral: true 
         });
         
@@ -371,11 +371,11 @@ client.on(Events.InteractionCreate, async interaction => {
         const logChannel = getLogChannel(interaction.guild, "roles");
         if (logChannel) {
           const embed = new EmbedBuilder()
-            .setTitle('🔴 Rôle retiré')
+            .setTitle('🔴 Role Removed')
             .addFields(
-              { name: 'Membre', value: `${member.user.tag} (<@${member.user.id}>)`, inline: true },
-              { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
-              { name: 'Méthode', value: 'Bouton réaction', inline: true }
+              { name: 'Member', value: `${member.user.tag} (<@${member.user.id}>)`, inline: true },
+              { name: 'Role', value: `${role.name} (<@&${role.id}>)`, inline: true },
+              { name: 'Method', value: 'Button reaction', inline: true }
             )
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setColor(0xff5555)
@@ -386,7 +386,7 @@ client.on(Events.InteractionCreate, async interaction => {
         // Add role if user doesn't have it
         await member.roles.add(role);
         await interaction.reply({ 
-          content: `✅ Rôle **${role.name}** ajouté.`, 
+          content: `✅ Role **${role.name}** added.`, 
           ephemeral: true 
         });
         
@@ -394,11 +394,11 @@ client.on(Events.InteractionCreate, async interaction => {
         const logChannel = getLogChannel(interaction.guild, "roles");
         if (logChannel) {
           const embed = new EmbedBuilder()
-            .setTitle('🟢 Rôle ajouté')
+            .setTitle('🟢 Role Added')
             .addFields(
-              { name: 'Membre', value: `${member.user.tag} (<@${member.user.id}>)`, inline: true },
-              { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
-              { name: 'Méthode', value: 'Bouton réaction', inline: true }
+              { name: 'Member', value: `${member.user.tag} (<@${member.user.id}>)`, inline: true },
+              { name: 'Role', value: `${role.name} (<@&${role.id}>)`, inline: true },
+              { name: 'Method', value: 'Button reaction', inline: true }
             )
             .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
             .setColor(0x00ff99)
@@ -409,7 +409,7 @@ client.on(Events.InteractionCreate, async interaction => {
     } catch (error) {
       console.error('Error handling reaction role:', error);
       await interaction.reply({ 
-        content: '❌ Erreur lors de la gestion du rôle. Vérifiez les permissions du bot.', 
+        content: '❌ Error handling role. Check bot permissions.', 
         ephemeral: true 
       });
     }
@@ -613,17 +613,17 @@ client.on(Events.InteractionCreate, async interaction => {
 
     await interaction.reply({ content: '✅ Ticket fermé. Le canal sera supprimé dans 5 secondes.', ephemeral: true });
 
-    // Log de la fermeture du ticket
+    // Log ticket closure
     const logChannel = getLogChannel(interaction.guild, "tickets");
     if (logChannel) {
       const user = await interaction.client.users.fetch(ticketData.userId).catch(() => null);
       const embed = new EmbedBuilder()
-        .setTitle('🔴 Ticket fermé')
+        .setTitle('🔴 Ticket Closed')
         .addFields(
           { name: 'Ticket ID', value: ticketId, inline: true },
-          { name: 'Utilisateur', value: user ? user.tag : 'Utilisateur inconnu', inline: true },
-          { name: 'Fermé par', value: interaction.user.tag, inline: true },
-          { name: 'Canal', value: interaction.channel.name, inline: true }
+          { name: 'User', value: user ? user.tag : 'Unknown user', inline: true },
+          { name: 'Closed by', value: interaction.user.tag, inline: true },
+          { name: 'Channel', value: interaction.channel.name, inline: true }
         )
         .setColor(0xff5555)
         .setTimestamp(new Date());
@@ -681,6 +681,7 @@ function getLogChannel(guild, type = "mod") {
   const guildId = guild.id;
   const conf = settings[guildId]?.logs;
   if (!conf?.enabled || !conf.channel) return null;
+  // Vérifier si la catégorie spécifique est activée
   if (type && conf.categories && !conf.categories[type]) return null;
   const channel = guild.channels.cache.get(conf.channel);
   if (!channel) return null;
@@ -1205,25 +1206,25 @@ client.on('messageDelete', async (message) => {
 
 // Gestion des événements de réaction pour les rôles réaction avec émojis
 client.on('messageReactionAdd', async (reaction, user) => {
-  // Ignorer les réactions du bot
+  // Ignore bot reactions
   if (user.bot) return;
   
-  // Récupérer l'utilisateur complet si nécessaire
+  // Fetch user if needed
   if (reaction.partial) {
     try {
       await reaction.fetch();
     } catch (error) {
-      console.error('Erreur lors de la récupération de la réaction:', error);
+      console.error('Error fetching reaction:', error);
       return;
     }
   }
 
-  // Récupérer le message complet si nécessaire
+  // Fetch message if needed
   if (reaction.message.partial) {
     try {
       await reaction.message.fetch();
     } catch (error) {
-      console.error('Erreur lors de la récupération du message:', error);
+      console.error('Error fetching message:', error);
       return;
     }
   }
@@ -1255,17 +1256,17 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
   try {
     await member.roles.add(role);
-    console.log(`Rôle ${role.name} ajouté à ${user.tag} via réaction`);
+    console.log(`Role ${role.name} added to ${user.tag} via reaction`);
 
-    // Log de l'ajout de rôle
+    // Log role addition
     const logChannel = getLogChannel(reaction.message.guild, "roles");
     if (logChannel) {
       const embed = new EmbedBuilder()
-        .setTitle('🟢 Rôle ajouté')
+        .setTitle('🟢 Role Added')
         .addFields(
-          { name: 'Membre', value: `${user.tag} (<@${user.id}>)`, inline: true },
-          { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
-          { name: 'Méthode', value: 'Réaction émoji', inline: true }
+          { name: 'Member', value: `${user.tag} (<@${user.id}>)`, inline: true },
+          { name: 'Role', value: `${role.name} (<@&${role.id}>)`, inline: true },
+          { name: 'Method', value: 'Emoji reaction', inline: true }
         )
         .setThumbnail(user.displayAvatarURL({ dynamic: true }))
         .setColor(0x00ff99)
@@ -1273,30 +1274,30 @@ client.on('messageReactionAdd', async (reaction, user) => {
       await logChannel.send({ embeds: [embed] });
     }
   } catch (error) {
-    console.error('Erreur lors de l\'ajout du rôle via réaction:', error);
+    console.error('Error adding role via reaction:', error);
   }
 });
 
 client.on('messageReactionRemove', async (reaction, user) => {
-  // Ignorer les réactions du bot
+  // Ignore bot reactions
   if (user.bot) return;
   
-  // Récupérer l'utilisateur complet si nécessaire
+  // Fetch user if needed
   if (reaction.partial) {
     try {
       await reaction.fetch();
     } catch (error) {
-      console.error('Erreur lors de la récupération de la réaction:', error);
+      console.error('Error fetching reaction:', error);
       return;
     }
   }
 
-  // Récupérer le message complet si nécessaire
+  // Fetch message if needed
   if (reaction.message.partial) {
     try {
       await reaction.message.fetch();
     } catch (error) {
-      console.error('Erreur lors de la récupération du message:', error);
+      console.error('Error fetching message:', error);
       return;
     }
   }
@@ -1328,17 +1329,17 @@ client.on('messageReactionRemove', async (reaction, user) => {
 
   try {
     await member.roles.remove(role);
-    console.log(`Rôle ${role.name} retiré de ${user.tag} via réaction`);
+    console.log(`Role ${role.name} removed from ${user.tag} via reaction`);
 
-    // Log du retrait de rôle
+    // Log role removal
     const logChannel = getLogChannel(reaction.message.guild, "roles");
     if (logChannel) {
       const embed = new EmbedBuilder()
-        .setTitle('🔴 Rôle retiré')
+        .setTitle('🔴 Role Removed')
         .addFields(
-          { name: 'Membre', value: `${user.tag} (<@${user.id}>)`, inline: true },
-          { name: 'Rôle', value: `${role.name} (<@&${role.id}>)`, inline: true },
-          { name: 'Méthode', value: 'Réaction émoji', inline: true }
+          { name: 'Member', value: `${user.tag} (<@${user.id}>)`, inline: true },
+          { name: 'Role', value: `${role.name} (<@&${role.id}>)`, inline: true },
+          { name: 'Method', value: 'Emoji reaction', inline: true }
         )
         .setThumbnail(user.displayAvatarURL({ dynamic: true }))
         .setColor(0xff5555)
@@ -1346,7 +1347,435 @@ client.on('messageReactionRemove', async (reaction, user) => {
       await logChannel.send({ embeds: [embed] });
     }
   } catch (error) {
-    console.error('Erreur lors du retrait du rôle via réaction:', error);
+    console.error('Error removing role via reaction:', error);
+  }
+});
+
+// Soundboard event logging
+client.on('guildScheduledEventCreate', async (event) => {
+  const logChannel = getLogChannel(event.guild, "soundboard");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('🎵 Soundboard Event Created')
+      .addFields(
+        { name: 'Event Name', value: event.name, inline: true },
+        { name: 'Created by', value: event.creator?.tag || 'Unknown', inline: true },
+        { name: 'Start Time', value: event.scheduledStartAt ? `<t:${Math.floor(event.scheduledStartAt.getTime()/1000)}:F>` : 'Not scheduled', inline: true },
+        { name: 'Description', value: event.description || 'No description', inline: false }
+      )
+      .setColor(0x00ff99)
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+client.on('guildScheduledEventUpdate', async (oldEvent, newEvent) => {
+  const logChannel = getLogChannel(newEvent.guild, "soundboard");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('🎵 Soundboard Event Updated')
+      .addFields(
+        { name: 'Event Name', value: newEvent.name, inline: true },
+        { name: 'Updated by', value: newEvent.creator?.tag || 'Unknown', inline: true },
+        { name: 'Status', value: newEvent.status, inline: true },
+        { name: 'Changes', value: getEventChanges(oldEvent, newEvent), inline: false }
+      )
+      .setColor(0xffa500)
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+client.on('guildScheduledEventDelete', async (event) => {
+  const logChannel = getLogChannel(event.guild, "soundboard");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('🎵 Soundboard Event Deleted')
+      .addFields(
+        { name: 'Event Name', value: event.name, inline: true },
+        { name: 'Deleted by', value: event.creator?.tag || 'Unknown', inline: true },
+        { name: 'Status', value: event.status, inline: true }
+      )
+      .setColor(0xff5555)
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+// Helper function to detect changes in soundboard events
+function getEventChanges(oldEvent, newEvent) {
+  const changes = [];
+  
+  if (oldEvent.name !== newEvent.name) {
+    changes.push(`Name: "${oldEvent.name}" → "${newEvent.name}"`);
+  }
+  
+  if (oldEvent.description !== newEvent.description) {
+    changes.push('Description updated');
+  }
+  
+  if (oldEvent.scheduledStartAt?.getTime() !== newEvent.scheduledStartAt?.getTime()) {
+    changes.push('Start time updated');
+  }
+  
+  if (oldEvent.scheduledEndAt?.getTime() !== newEvent.scheduledEndAt?.getTime()) {
+    changes.push('End time updated');
+  }
+  
+  if (oldEvent.status !== newEvent.status) {
+    changes.push(`Status: ${oldEvent.status} → ${newEvent.status}`);
+  }
+  
+  return changes.length > 0 ? changes.join('\n') : 'No specific changes detected';
+}
+
+// Channel modification logging
+client.on('channelCreate', async (channel) => {
+  const logChannel = getLogChannel(channel.guild, "channels");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('📝 Channel Created')
+      .addFields(
+        { name: 'Channel Name', value: channel.name, inline: true },
+        { name: 'Channel Type', value: channel.type.toString(), inline: true },
+        { name: 'Channel ID', value: channel.id, inline: true },
+        { name: 'Category', value: channel.parent?.name || 'No category', inline: true },
+        { name: 'Position', value: channel.position.toString(), inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setColor(0x00ff99)
+      .setFooter({ text: 'DSU Channel Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+client.on('channelDelete', async (channel) => {
+  const logChannel = getLogChannel(channel.guild, "channels");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('🗑️ Channel Deleted')
+      .addFields(
+        { name: 'Channel Name', value: channel.name, inline: true },
+        { name: 'Channel Type', value: channel.type.toString(), inline: true },
+        { name: 'Channel ID', value: channel.id, inline: true },
+        { name: 'Category', value: channel.parent?.name || 'No category', inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setColor(0xff5555)
+      .setFooter({ text: 'DSU Channel Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+client.on('channelUpdate', async (oldChannel, newChannel) => {
+  const logChannel = getLogChannel(newChannel.guild, "channels");
+  if (!logChannel) return;
+
+  const changes = [];
+  
+  // Check for name changes
+  if (oldChannel.name !== newChannel.name) {
+    changes.push(`Name: "${oldChannel.name}" → "${newChannel.name}"`);
+  }
+  
+  // Check for topic changes (text channels only)
+  if (oldChannel.topic !== newChannel.topic) {
+    changes.push('Topic updated');
+  }
+  
+  // Check for position changes
+  if (oldChannel.position !== newChannel.position) {
+    changes.push(`Position: ${oldChannel.position} → ${newChannel.position}`);
+  }
+  
+  // Check for parent/category changes
+  if (oldChannel.parent?.id !== newChannel.parent?.id) {
+    const oldParent = oldChannel.parent?.name || 'No category';
+    const newParent = newChannel.parent?.name || 'No category';
+    changes.push(`Category: "${oldParent}" → "${newParent}"`);
+  }
+  
+  // Check for permission overwrite changes
+  if (oldChannel.permissionOverwrites.cache.size !== newChannel.permissionOverwrites.cache.size) {
+    changes.push('Permission overwrites updated');
+  }
+  
+  // Check for slowmode changes (text channels only)
+  if (oldChannel.rateLimitPerUser !== newChannel.rateLimitPerUser) {
+    changes.push(`Slowmode: ${oldChannel.rateLimitPerUser}s → ${newChannel.rateLimitPerUser}s`);
+  }
+  
+  // Check for nsfw changes (text channels only)
+  if (oldChannel.nsfw !== newChannel.nsfw) {
+    changes.push(`NSFW: ${oldChannel.nsfw} → ${newChannel.nsfw}`);
+  }
+
+  if (changes.length > 0) {
+    const embed = new EmbedBuilder()
+      .setTitle('🔧 Channel Updated')
+      .addFields(
+        { name: 'Channel', value: `${newChannel.name} (<#${newChannel.id}>)`, inline: true },
+        { name: 'Channel Type', value: newChannel.type.toString(), inline: true },
+        { name: 'Changes', value: changes.join('\n'), inline: false },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setColor(0xffa500)
+      .setFooter({ text: 'DSU Channel Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+// Message logging
+client.on('messageDelete', async (message) => {
+  // Ignore bot messages and DMs
+  if (message.author?.bot || !message.guild) return;
+  
+  const logChannel = getLogChannel(message.guild, "messages");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('🗑️ Message Deleted')
+      .addFields(
+        { name: 'Author', value: `${message.author.tag} (<@${message.author.id}>)`, inline: true },
+        { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+        { name: 'Message ID', value: message.id, inline: true },
+        { name: 'Content', value: message.content || 'No content (embed/attachment)', inline: false },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+      .setColor(0xff5555)
+      .setFooter({ text: 'DSU Message Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+client.on('messageUpdate', async (oldMessage, newMessage) => {
+  // Ignore bot messages and DMs
+  if (oldMessage.author?.bot || !oldMessage.guild) return;
+  
+  // Ignore if content is the same
+  if (oldMessage.content === newMessage.content) return;
+  
+  const logChannel = getLogChannel(oldMessage.guild, "messages");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('✏️ Message Edited')
+      .addFields(
+        { name: 'Author', value: `${oldMessage.author.tag} (<@${oldMessage.author.id}>)`, inline: true },
+        { name: 'Channel', value: `<#${oldMessage.channel.id}>`, inline: true },
+        { name: 'Message ID', value: oldMessage.id, inline: true },
+        { name: 'Old Content', value: oldMessage.content || 'No content', inline: false },
+        { name: 'New Content', value: newMessage.content || 'No content', inline: false },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(oldMessage.author.displayAvatarURL({ dynamic: true }))
+      .setColor(0xffa500)
+      .setFooter({ text: 'DSU Message Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+// Bulk delete logging
+client.on('messageDeleteBulk', async (messages) => {
+  const firstMessage = messages.first();
+  if (!firstMessage || !firstMessage.guild) return;
+  
+  const logChannel = getLogChannel(firstMessage.guild, "bulkdelete");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('🗑️ Bulk Messages Deleted')
+      .addFields(
+        { name: 'Channel', value: `<#${firstMessage.channel.id}>`, inline: true },
+        { name: 'Messages Count', value: messages.size.toString(), inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setColor(0xff5555)
+      .setFooter({ text: 'DSU Bulk Delete Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+// Economy logging - Streaks and Level ups
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages and DMs
+  if (message.author?.bot || !message.guild) return;
+  
+  const logChannel = getLogChannel(message.guild, "economy");
+  if (!logChannel) return;
+
+  // Check for streak commands
+  if (message.content.startsWith('/streak') || message.content.startsWith('/mystreak')) {
+    const embed = new EmbedBuilder()
+      .setTitle('🔥 Streak Checked')
+      .addFields(
+        { name: 'User', value: `${message.author.tag} (<@${message.author.id}>)`, inline: true },
+        { name: 'Command', value: message.content.split(' ')[0], inline: true },
+        { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+      .setColor(0xff6b35)
+      .setFooter({ text: 'DSU Economy Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+
+  // Check for level commands
+  if (message.content.startsWith('/rank') || message.content.startsWith('/level')) {
+    const embed = new EmbedBuilder()
+      .setTitle('⭐ Level Checked')
+      .addFields(
+        { name: 'User', value: `${message.author.tag} (<@${message.author.id}>)`, inline: true },
+        { name: 'Command', value: message.content.split(' ')[0], inline: true },
+        { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+      .setColor(0xffd700)
+      .setFooter({ text: 'DSU Economy Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+// Level up detection (you can customize this based on your leveling system)
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages and DMs
+  if (message.author?.bot || !message.guild) return;
+  
+  const logChannel = getLogChannel(message.guild, "economy");
+  if (!logChannel) return;
+
+  // This is a placeholder - you'll need to integrate with your actual leveling system
+  // Example: Check if user leveled up in your leveling system
+  try {
+    const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+    const guildId = message.guild.id;
+    const userId = message.author.id;
+    
+    if (settings[guildId]?.level?.users?.[userId]) {
+      const userData = settings[guildId].level.users[userId];
+      const oldLevel = userData.level;
+      
+      // Simulate level up detection (replace with your actual logic)
+      // This is just an example - you should integrate with your real leveling system
+      if (userData.xp >= oldLevel * 100 && userData.xp < (oldLevel + 1) * 100) {
+        const embed = new EmbedBuilder()
+          .setTitle('🎉 Level Up!')
+          .addFields(
+            { name: 'User', value: `${message.author.tag} (<@${message.author.id}>)`, inline: true },
+            { name: 'New Level', value: `${oldLevel + 1}`, inline: true },
+            { name: 'XP', value: `${userData.xp}`, inline: true },
+            { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+            { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+          )
+          .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+          .setColor(0x00ff99)
+          .setFooter({ text: 'DSU Economy Logger' })
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [embed] });
+      }
+    }
+  } catch (error) {
+    // Silently handle errors
+  }
+});
+
+// Streak milestone detection (you can customize this based on your streak system)
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages and DMs
+  if (message.author?.bot || !message.guild) return;
+  
+  const logChannel = getLogChannel(message.guild, "economy");
+  if (!logChannel) return;
+
+  // This is a placeholder - you'll need to integrate with your actual streak system
+  // Example: Check for streak milestones
+  try {
+    // You can add your streak checking logic here
+    // For now, this is just a placeholder
+    if (message.content.includes('streak') && (message.content.includes('7') || message.content.includes('30') || message.content.includes('100'))) {
+      const embed = new EmbedBuilder()
+        .setTitle('🔥 Streak Milestone!')
+        .addFields(
+          { name: 'User', value: `${message.author.tag} (<@${message.author.id}>)`, inline: true },
+          { name: 'Milestone', value: 'Streak achievement mentioned', inline: true },
+          { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+          { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+        )
+        .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+        .setColor(0xff6b35)
+        .setFooter({ text: 'DSU Economy Logger' })
+        .setTimestamp(new Date());
+      await logChannel.send({ embeds: [embed] });
+    }
+  } catch (error) {
+    // Silently handle errors
+  }
+});
+
+// Invite logging
+client.on('inviteCreate', async (invite) => {
+  const logChannel = getLogChannel(invite.guild, "invites");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('📨 Invite Created')
+      .addFields(
+        { name: 'Created by', value: `${invite.inviter?.tag || 'Unknown'} (<@${invite.inviter?.id || 'Unknown'}>)`, inline: true },
+        { name: 'Channel', value: `<#${invite.channel.id}>`, inline: true },
+        { name: 'Code', value: invite.code, inline: true },
+        { name: 'Max Uses', value: invite.maxUses ? invite.maxUses.toString() : 'Unlimited', inline: true },
+        { name: 'Expires At', value: invite.expiresAt ? `<t:${Math.floor(invite.expiresAt.getTime()/1000)}:F>` : 'Never', inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(invite.inviter?.displayAvatarURL({ dynamic: true }) || null)
+      .setColor(0x00ff99)
+      .setFooter({ text: 'DSU Invite Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+client.on('inviteDelete', async (invite) => {
+  const logChannel = getLogChannel(invite.guild, "invites");
+  if (logChannel) {
+    const embed = new EmbedBuilder()
+      .setTitle('🗑️ Invite Deleted')
+      .addFields(
+        { name: 'Channel', value: `<#${invite.channel.id}>`, inline: true },
+        { name: 'Code', value: invite.code, inline: true },
+        { name: 'Uses', value: `${invite.uses}/${invite.maxUses || '∞'}`, inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setColor(0xff5555)
+      .setFooter({ text: 'DSU Invite Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+  }
+});
+
+client.on('guildMemberAdd', async (member) => {
+  // Log member join with invite info
+  const logChannel = getLogChannel(member.guild, "invites");
+  if (logChannel) {
+    // Try to get invite info (this is a simplified version)
+    const embed = new EmbedBuilder()
+      .setTitle('👋 Member Joined via Invite')
+      .addFields(
+        { name: 'Member', value: `${member.user.tag} (<@${member.id}>)`, inline: true },
+        { name: 'Account Created', value: `<t:${Math.floor(member.user.createdTimestamp/1000)}:F>`, inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+      .setColor(0x00ff99)
+      .setFooter({ text: 'DSU Invite Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
   }
 });
 
