@@ -2254,3 +2254,21 @@ client.on('guildMemberAdd', async (member) => {
   }
 });
 
+// Initialize and start the update checker
+const UpdateChecker = require('./update-checker.js');
+const updateChecker = new UpdateChecker(client);
+
+// Start the update checker when the bot is ready
+client.once('ready', () => {
+  console.log(`✅ Bot connected as ${client.user.tag}`);
+  updateChecker.start();
+});
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('🛑 Shutting down...');
+  updateChecker.stop();
+  client.destroy();
+  process.exit(0);
+});
+
