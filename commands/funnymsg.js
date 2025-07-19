@@ -298,8 +298,8 @@ module.exports = {
           .setDescription(`Eat detection and response is now ${enabled ? 'active' : 'inactive'}.`)
           .addFields(
             { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
-            { name: 'Trigger', value: '"je mange" / "I eat"', inline: true },
-            { name: 'Response', value: 'Bon appétit! / Enjoy your meal!', inline: true }
+            { name: 'Trigger', value: '"I eat" / "I\'m eating"', inline: true },
+            { name: 'Response', value: 'Bon appétit! Enjoy your meal!', inline: true }
           )
           .setColor(enabled ? 0x00ff99 : 0xff5555)
           .setFooter({ text: `Requested by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })

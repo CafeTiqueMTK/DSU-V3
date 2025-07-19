@@ -1114,8 +1114,8 @@ client.on('messageCreate', async (message) => {
   if (guildSettings.funny?.eat?.enabled) {
     const content = message.content.toLowerCase();
     
-    // Détecter "je mange" ou "I eat" ou variations
-    if (content.includes('je mange') || content.includes('i eat') || content.includes('i\'m eating') || content.includes('i am eating')) {
+    // Détecter "I eat" ou variations en anglais uniquement
+    if (content.includes('i eat') || content.includes('i\'m eating') || content.includes('i am eating')) {
       // Cooldown pour éviter le spam (30 secondes par utilisateur)
       if (!client.funnyCooldown) client.funnyCooldown = new Map();
       const cooldownKey = `${message.guild.id}:${message.author.id}:eat`;
