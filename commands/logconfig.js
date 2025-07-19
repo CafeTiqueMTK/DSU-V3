@@ -51,6 +51,24 @@ module.exports = {
             .setDescription('Enable or disable')
             .setRequired(true)
         )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('commands')
+        .setDescription('Enable or disable the "commands" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
+    )
+    .addSubcommand(cmd =>
+      cmd.setName('roles')
+        .setDescription('Enable or disable the "roles" category')
+        .addBooleanOption(option =>
+          option.setName('state')
+            .setDescription('Enable or disable')
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -70,7 +88,9 @@ module.exports = {
           farewell: false,
           vocal: false,
           mod: false,
-          automod: false
+          automod: false,
+          commands: false,
+          roles: false
         }
       };
     }

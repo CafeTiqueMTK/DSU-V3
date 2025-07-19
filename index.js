@@ -97,6 +97,24 @@ client.on(Events.InteractionCreate, async interaction => {
     try {
       await command.execute(interaction);
       console.log(`Executed command: ${interaction.commandName}`);
+      
+      // Log command execution
+      const logChannel = getLogChannel(interaction.guild, "commands");
+      if (logChannel) {
+        const embed = new EmbedBuilder()
+          .setTitle('⚡ Command Executed')
+          .addFields(
+            { name: 'Command', value: `\`/${interaction.commandName}\``, inline: true },
+            { name: 'User', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
+            { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: true },
+            { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+          )
+          .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+          .setColor(0x00ff99)
+          .setFooter({ text: 'DSU Command Logger' })
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [embed] });
+      }
     } catch (error) {
       console.error('Error during command execution:', error);
       await interaction.reply({ content: '❌ An error occurred.', ephemeral: true });
@@ -124,11 +142,11 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 });
 
-// Message handler (automod)
+// Message handler (coins system only)
 client.on('messageCreate', async (message) => {
   if (message.author.bot || !message.guild) return;
 
-  // --- Ajout : système de coins par message ---
+  // --- Système de coins par message ---
   const guildId = message.guild.id;
   const userId = message.author.id;
   const guildSettingsStreak = getGuildSettings(guildId);
@@ -137,337 +155,7 @@ client.on('messageCreate', async (message) => {
   if (!guildSettingsStreak.streak.users[userId]) guildSettingsStreak.streak.users[userId] = { coins: 0 };
   guildSettingsStreak.streak.users[userId].coins = (guildSettingsStreak.streak.users[userId].coins || 0) + 10;
   updateGuildSettings(guildId, guildSettingsStreak);
-  // --- Fin ajout ---
-
-  // Ignore all messages from the bot itself (so automod never triggers on bot messages)
-  if (message.author.id === client.user.id) return;
-
-  // DEBUG : Vérifie si le bot lit bien les messages et affiche tout le contenu
-  console.log(`[DEBUG] Message received: Server=${message.guild.name} | Channel=#${message.channel.name} | Author=${message.author.tag} | Content="${message.content}"`);
-
-  // Recharge settings à chaque message pour éviter le cache
-  let freshSettings;
-  try {
-    freshSettings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
-  } catch {
-    freshSettings = {};
-  }
-  const guildSettings = freshSettings[message.guild.id]?.automod;
-
-  if (!guildSettings?.enabled) return;
-
-  // --- Ignorer les rôles configurés ---
-  const ignoredRoles = guildSettings.ignoredRoles || [];
-  if (
-    ignoredRoles.length > 0 &&
-    message.member &&
-    message.member.roles.cache.some(r => ignoredRoles.includes(r.id))
-  ) {
-    return;
-  }
-  // --- Ignorer les salons configurés ---
-  const ignoredChannels = guildSettings.ignoredChannels || [];
-  if (ignoredChannels.length > 0 && ignoredChannels.includes(message.channel.id)) {
-    return;
-  }
-  // --- Fin ajout ---
-
-  const member = message.member;
-
-  const applySanction = async (sanction, reason) => {
-    // --- Cooldown anti-abus : 5 secondes entre deux sanctions automod pour le même utilisateur ---
-    if (!client.automodCooldown) client.automodCooldown = new Map();
-    const cooldownKey = `${message.guild.id}:${message.author.id}`;
-    const now = Date.now();
-    const lastSanction = client.automodCooldown.get(cooldownKey) || 0;
-    if (now - lastSanction < 5000) {
-      console.log(`[AUTOMOD] Cooldown: sanction skipped for ${message.author.tag}`);
-      return;
-    }
-    client.automodCooldown.set(cooldownKey, now);
-
-    try {
-      await message.author.send({
-        embeds: [{
-          title: 'Automod Sanction',
-          description: `You have been sanctioned for: **${reason}**\nPlease respect the server rules.`,
-          color: 0xff0000
-        }]
-      });
-      console.log(`Sent sanction DM to ${message.author.tag}`);
-    } catch (e) {
-      console.warn(`Could not send DM to ${message.author.tag}`);
-    }
-
-    // --- Send notification in automod.actionChannel ---
-    try {
-      const actionChannelId = guildSettings.actionChannel;
-      if (actionChannelId) {
-        const notifChannel = message.guild.channels.cache.get(actionChannelId);
-        if (notifChannel) {
-          const embed = new EmbedBuilder()
-            .setTitle('🚨 Automod Action')
-            .addFields(
-              { name: 'User', value: `<@${message.author.id}> (${message.author.tag || 'unknown'})`, inline: true },
-              { name: 'Sanction', value: String(sanction || 'None'), inline: true },
-              { name: 'Reason', value: String(reason || 'Not specified'), inline: false },
-              { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
-            )
-            .setColor(0xff0000)
-            .setTimestamp(new Date());
-          await notifChannel.send({ embeds: [embed] });
-        }
-      }
-    } catch (e) {
-      console.warn('Error while sending automod notification:', e);
-    }
-    // --- End notification ---
-
-    switch (sanction) {
-      case 'warn':
-        await message.channel.send(`⚠️ <@${message.author.id}> has been warned for **${reason}**.`);
-        console.log(`Warned ${message.author.tag} for: ${reason}`);
-        if (client.logModerationAction) {
-          client.logModerationAction(message.guild, message.author, 'warn', reason, message.client.user);
-        }
-        break;
-      case 'kick':
-        await member.kick(reason);
-        console.log(`Kicked ${message.author.tag} for: ${reason}`);
-        break;
-      case 'ban':
-        await member.ban({ reason });
-        console.log(`Banned ${message.author.tag} for: ${reason}`);
-        break;
-      case 'mute':
-        const muteRole = message.guild.roles.cache.find(r => r.name.toLowerCase() === 'mute');
-        if (muteRole) {
-          await member.roles.add(muteRole, reason);
-          console.log(`Muted ${message.author.tag} for: ${reason}`);
-        } else {
-          await message.channel.send('🔇 Mute role not found.');
-          console.log('Mute role not found.');
-        }
-        break;
-    }
-
-    // Enregistrement de l'action automod
-    try {
-      let actions = {};
-      if (fs.existsSync(automodActionsPath)) {
-        try {
-          const raw = fs.readFileSync(automodActionsPath, 'utf-8');
-          actions = raw.trim() ? JSON.parse(raw) : {};
-        } catch (e) {
-          console.warn('automod_actions.json corrompu ou vide, réinitialisation.');
-          actions = {};
-        }
-      }
-      if (!actions[message.guild.id]) actions[message.guild.id] = {};
-      if (!actions[message.guild.id][message.author.id]) actions[message.guild.id][message.author.id] = [];
-      actions[message.guild.id][message.author.id].push({
-        date: new Date().toISOString(),
-        sanction,
-        reason
-      });
-      fs.writeFileSync(automodActionsPath, JSON.stringify(actions, null, 2));
-    } catch (e) {
-      console.warn('Erreur lors de l\'enregistrement de l\'action automod :', e);
-    }
-  };
-
-  // 🔗 Discord link (détection améliorée + debug)
-  if (
-    guildSettings.categories?.discordLink?.enabled &&
-    /(https?:\/\/)?(www\.)?(discord(app)?\.com\/invite|discord\.gg)\/[a-zA-Z0-9-]+/i.test(message.content)
-  ) {
-    console.log('[DEBUG] Discord link detected, trying to delete...');
-    await message.delete().then(() => {
-      console.log('[DEBUG] Message deleted successfully.');
-    }).catch(e => {
-      console.warn('[DEBUG] Failed to delete message:', e);
-    });
-    await applySanction(guildSettings.categories.discordLink.sanction, 'discord link$');
-    return;
-  }
-
-  // 👻 Ghost ping
-  // Correction : ne considère ghost ping que si le message est supprimé juste après l'envoi (messageDelete), pas à la création
-  // Donc on retire ce bloc du messageCreate :
-  // if (guildSettings.categories?.ghostPing?.enabled && message.mentions.users.size > 0 && message.type === 0 && message.content.trim() === '') {
-  //   console.log('Detected ghost ping.');
-  //   await applySanction(guildSettings.categories.ghostPing.sanction, 'Ghost ping');
-  // }
-
-  // 📣 Mention spam
-  if (guildSettings.categories?.mentionSpam?.enabled && message.mentions.users.size >= 5) {
-    await message.delete().catch(e => console.warn('Failed to delete mention spam message:', e));
-    console.log('Deleted message for mention spam.');
-    await applySanction(guildSettings.categories.mentionSpam.sanction, 'Mention spam');
-  }
-
-  // 💬 Soft spam
-  if (guildSettings.categories?.spam?.enabled) {
-    const now = Date.now();
-    if (!client.spamMap) client.spamMap = new Map();
-
-    const userData = client.spamMap.get(message.author.id) || { count: 0, last: now };
-    const timeDiff = now - userData.last;
-
-    if (timeDiff < 15000) {
-      userData.count += 1;
-    } else {
-      userData.count = 1;
-    }
-    userData.last = now;
-    client.spamMap.set(message.author.id, userData);
-
-    if (userData.count > 10) {
-      console.log(`Detected spam from ${message.author.tag}`);
-      await applySanction(guildSettings.categories.spam.sanction, 'Message spam');
-      client.spamMap.set(message.author.id, { count: 0, last: now });
-    }
-  }
-
-  // 💬 Soft spam (anti-spam: 5 messages in 5 seconds, delete last 5)
-  if (guildSettings.categories?.spam?.enabled) {
-    if (!client.antiSpamMap) client.antiSpamMap = new Map();
-    const key = `${message.guild.id}:${message.channel.id}:${message.author.id}`;
-    const now = Date.now();
-    let arr = client.antiSpamMap.get(key) || [];
-    arr = arr.filter(ts => now - ts < 5000); // keep only last 5 seconds
-    arr.push(now);
-    client.antiSpamMap.set(key, arr);
-    if (arr.length >= 5) {
-      // Fetch last 20 messages in the channel
-      const messages = await message.channel.messages.fetch({ limit: 20 });
-      // Filter last 5 messages from this user
-      const userMsgs = messages.filter(m => m.author.id === message.author.id).first(5);
-      for (const m of userMsgs) {
-        await m.delete().catch(() => {});
-      }
-      await applySanction(guildSettings.categories.spam.sanction, 'Spam: 5 messages in 5 seconds');
-      client.antiSpamMap.set(key, []); // reset
-    }
-  }
-
-  // ❌ Bad words
-  if (guildSettings.categories?.badWords?.enabled) {
-    const badWordsPath = './bannedWords.json';
-    if (fs.existsSync(badWordsPath)) {
-      const words = JSON.parse(fs.readFileSync(badWordsPath, 'utf-8'));
-      const lower = message.content.toLowerCase();
-      // Découper le message en mots (enlève la ponctuation, accents non gérés)
-      const messageWords = lower.split(/\b/).map(w => w.trim()).filter(Boolean);
-      let found = null;
-      for (const badWord of words) {
-        // Vérifie si le mot interdit est présent comme mot entier (en ignorant la casse)
-        const regex = new RegExp(`\\b${badWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-        if (regex.test(lower)) {
-          found = badWord;
-          break;
-        }
-      }
-      if (found) {
-        await message.delete().catch(e => console.warn('Failed to delete bad word message:', e));
-        console.log(`Deleted message for bad word: ${found}`);
-        // Récupère la durée si la sanction est mute
-        let muteDuration = 10;
-        if (guildSettings.categories.badWords.sanction === 'mute') {
-          muteDuration = guildSettings.categories.badWords.duree || 10;
-        }
-        await applySanction(
-          guildSettings.categories.badWords.sanction,
-          `Forbidden word: ${found}`,
-          muteDuration
-        );
-
-        // Ajout automatique du warn dans warns.json
-        if (guildSettings.categories.badWords.sanction === 'warn') {
-          const warnsPath = path.join(__dirname, 'warns.json');
-          let warnsData = {};
-          if (fs.existsSync(warnsPath)) {
-            warnsData = JSON.parse(fs.readFileSync(warnsPath, 'utf8'));
-          }
-          if (!warnsData[guildId]) warnsData[guildId] = {};
-          if (!warnsData[guildId][message.author.id]) warnsData[guildId][message.author.id] = [];
-          warnsData[guildId][message.author.id].push({
-            moderator: 'Automod',
-            reason: `Forbidden word: ${found}`,
-            date: new Date().toLocaleString()
-          });
-          fs.writeFileSync(warnsPath, JSON.stringify(warnsData, null, 2));
-          console.log(`Warn added to warns.json for ${message.author.tag}`);
-        }
-      }
-    }
-  }
-
-  // --- Système de niveaux ---
-  try {
-    let settings;
-    try {
-      settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
-    } catch {
-      settings = {};
-    }
-    const guildId = message.guild.id;
-    const levelConf = settings[guildId]?.level;
-    if (levelConf && levelConf.enabled) {
-      if (!levelConf.users) levelConf.users = {};
-      let userData = levelConf.users[message.author.id];
-      if (!userData) userData = levelConf.users[message.author.id] = { xp: 0, level: 1 };
-
-      // Calcul du multiplicateur de rôle booster
-      let multiplier = 1;
-      if (levelConf.boosters && message.member) {
-        for (const [roleId, mult] of Object.entries(levelConf.boosters)) {
-          if (message.member.roles.cache.has(roleId)) {
-            multiplier = Math.max(multiplier, mult);
-          }
-        }
-      }
-
-      // XP de base par message
-      const baseXp = 10;
-      const xpGain = baseXp * multiplier;
-      userData.xp += xpGain;
-
-      // Fonction pour calculer l'xp nécessaire pour le prochain niveau (progression exponentielle)
-      function xpForLevel(level) {
-        return 100 * Math.pow(1.25, level - 1);
-      }
-
-      // Passage de niveau
-      let leveledUp = false;
-      while (userData.xp >= xpForLevel(userData.level)) {
-        userData.xp -= xpForLevel(userData.level);
-        userData.level += 1;
-        leveledUp = true;
-      }
-
-      if (leveledUp && levelConf.channel) {
-        const channel = message.guild.channels.cache.get(levelConf.channel);
-        if (channel) {
-          channel.send({
-            embeds: [{
-              title: '🎉 Level up! ',
-              description: `<@${message.author.id}> just reached level **${userData.level}**!`,
-              color: 0x00ff99,
-              footer: { text: 'DSU level system' },
-              timestamp: new Date()
-            }]
-          });
-        }
-      }
-
-      // Sauvegarde
-      settings[guildId].level = levelConf;
-      fs.writeFileSync('./settings.json', JSON.stringify(settings, null, 2));
-    }
-  } catch (err) {
-    console.warn('Level system error:', err);
-  }
+  // --- Fin système de coins ---
 });
 
 client.on('guildMemberAdd', async (member) => {
@@ -613,6 +301,226 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     }).then(() => {
       console.log('Voice switch log sent.');
     }).catch(e => console.error('Failed to send switch log:', e));
+  }
+});
+
+// Log roles - Attribution/Retrait de rôles aux membres
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  const logChannel = getLogChannel(newMember.guild, "roles");
+  if (!logChannel) return;
+
+  const addedRoles = newMember.roles.cache.filter(role => !oldMember.roles.cache.has(role.id));
+  const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
+
+  if (addedRoles.size > 0) {
+    const embed = new EmbedBuilder()
+      .setTitle('🎭 Role Added')
+      .addFields(
+        { name: 'Member', value: `${newMember.user.tag} (<@${newMember.id}>)`, inline: true },
+        { name: 'Role(s)', value: addedRoles.map(role => `<@&${role.id}>`).join(', '), inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true }))
+      .setColor(0x00ff99)
+      .setFooter({ text: 'DSU Role Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+    console.log(`Role added log sent for ${newMember.user.tag}`);
+  }
+
+  if (removedRoles.size > 0) {
+    const embed = new EmbedBuilder()
+      .setTitle('🗑️ Role Removed')
+      .addFields(
+        { name: 'Member', value: `${newMember.user.tag} (<@${newMember.id}>)`, inline: true },
+        { name: 'Role(s)', value: removedRoles.map(role => `<@&${role.id}>`).join(', '), inline: true },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setThumbnail(newMember.user.displayAvatarURL({ dynamic: true }))
+      .setColor(0xff5555)
+      .setFooter({ text: 'DSU Role Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+    console.log(`Role removed log sent for ${newMember.user.tag}`);
+  }
+});
+
+// Log roles - Modifications de rôles (création, suppression, modification)
+client.on('guildRoleCreate', async (role) => {
+  const logChannel = getLogChannel(role.guild, "roles");
+  if (!logChannel) return;
+
+  const embed = new EmbedBuilder()
+    .setTitle('✨ Role Created')
+    .addFields(
+      { name: 'Role', value: `<@&${role.id}>`, inline: true },
+      { name: 'Color', value: `#${role.color.toString(16).padStart(6, '0')}`, inline: true },
+      { name: 'Position', value: `${role.position}`, inline: true },
+      { name: 'Permissions', value: role.permissions.toArray().length > 0 ? role.permissions.toArray().join(', ') : 'None', inline: false },
+      { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+    )
+    .setColor(role.color || 0x00ff99)
+    .setFooter({ text: 'DSU Role Logger' })
+    .setTimestamp(new Date());
+  await logChannel.send({ embeds: [embed] });
+  console.log(`Role created log sent for ${role.name}`);
+});
+
+client.on('guildRoleDelete', async (role) => {
+  const logChannel = getLogChannel(role.guild, "roles");
+  if (!logChannel) return;
+
+  const embed = new EmbedBuilder()
+    .setTitle('💥 Role Deleted')
+    .addFields(
+      { name: 'Role Name', value: role.name, inline: true },
+      { name: 'Role ID', value: role.id, inline: true },
+      { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+    )
+    .setColor(0xff5555)
+    .setFooter({ text: 'DSU Role Logger' })
+    .setTimestamp(new Date());
+  await logChannel.send({ embeds: [embed] });
+  console.log(`Role deleted log sent for ${role.name}`);
+});
+
+client.on('guildRoleUpdate', async (oldRole, newRole) => {
+  const logChannel = getLogChannel(newRole.guild, "roles");
+  if (!logChannel) return;
+
+  const changes = [];
+  
+  if (oldRole.name !== newRole.name) {
+    changes.push(`**Name**: \`${oldRole.name}\` → \`${newRole.name}\``);
+  }
+  
+  if (oldRole.color !== newRole.color) {
+    const oldColor = `#${oldRole.color.toString(16).padStart(6, '0')}`;
+    const newColor = `#${newRole.color.toString(16).padStart(6, '0')}`;
+    changes.push(`**Color**: \`${oldColor}\` → \`${newColor}\``);
+  }
+  
+  if (oldRole.hoist !== newRole.hoist) {
+    changes.push(`**Hoist**: \`${oldRole.hoist}\` → \`${newRole.hoist}\``);
+  }
+  
+  if (oldRole.mentionable !== newRole.mentionable) {
+    changes.push(`**Mentionable**: \`${oldRole.mentionable}\` → \`${newRole.mentionable}\``);
+  }
+  
+  if (oldRole.permissions.bitfield !== newRole.permissions.bitfield) {
+    const addedPerms = newRole.permissions.toArray().filter(perm => !oldRole.permissions.has(perm));
+    const removedPerms = oldRole.permissions.toArray().filter(perm => !newRole.permissions.has(perm));
+    
+    if (addedPerms.length > 0) {
+      changes.push(`**Added Permissions**: ${addedPerms.join(', ')}`);
+    }
+    if (removedPerms.length > 0) {
+      changes.push(`**Removed Permissions**: ${removedPerms.join(', ')}`);
+    }
+  }
+
+  if (changes.length > 0) {
+    const embed = new EmbedBuilder()
+      .setTitle('🔧 Role Updated')
+      .addFields(
+        { name: 'Role', value: `<@&${newRole.id}>`, inline: true },
+        { name: 'Changes', value: changes.join('\n'), inline: false },
+        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+      )
+      .setColor(newRole.color || 0xffcc00)
+      .setFooter({ text: 'DSU Role Logger' })
+      .setTimestamp(new Date());
+    await logChannel.send({ embeds: [embed] });
+    console.log(`Role updated log sent for ${newRole.name}`);
+  }
+});
+
+// Gestionnaire d'événements automod Discord
+client.on('autoModerationActionExecution', async (autoModerationAction) => {
+  try {
+    const { guild, ruleId, ruleTriggerType, userId, channelId, messageId, alertSystemMessageId, content, matchedKeyword, matchedContent } = autoModerationAction;
+    
+    // Récupérer les informations du membre
+    const member = await guild.members.fetch(userId).catch(() => null);
+    if (!member) return;
+
+    // Récupérer les informations de la règle
+    const rule = await guild.autoModerationRules.fetch(ruleId).catch(() => null);
+    if (!rule) return;
+
+    // Déterminer le type de violation
+    let violationType = 'Unknown';
+    let reason = 'Automod violation';
+    
+    switch (ruleTriggerType) {
+      case 1: // KEYWORD
+        violationType = 'Forbidden Keyword';
+        reason = `Used forbidden keyword: "${matchedKeyword}"`;
+        break;
+      case 2: // HARMFUL_LINK
+        violationType = 'Harmful Link';
+        reason = 'Posted a harmful link';
+        break;
+      case 3: // SPAM
+        violationType = 'Spam';
+        reason = 'Spam detected';
+        break;
+      case 4: // KEYWORD_PRESET
+        violationType = 'Inappropriate Content';
+        reason = 'Inappropriate content detected';
+        break;
+      case 5: // MENTION_SPAM
+        violationType = 'Mention Spam';
+        reason = 'Excessive mentions detected';
+        break;
+    }
+
+    // Envoyer un message d'avertissement au membre
+    try {
+      const warningEmbed = new EmbedBuilder()
+        .setTitle('⚠️ Automod Warning')
+        .setDescription(`Your message has been flagged by our automod system.`)
+        .addFields(
+          { name: 'Violation Type', value: violationType, inline: true },
+          { name: 'Reason', value: reason, inline: true },
+          { name: 'Server', value: guild.name, inline: false },
+          { name: 'Channel', value: `<#${channelId}>`, inline: false }
+        )
+        .setColor(0xffa500)
+        .setFooter({ text: 'Please respect the server rules to avoid further actions' })
+        .setTimestamp(new Date());
+
+      await member.send({ embeds: [warningEmbed] });
+      console.log(`Sent automod warning to ${member.user.tag} for ${violationType}`);
+    } catch (dmError) {
+      console.warn(`Could not send DM to ${member.user.tag}:`, dmError);
+    }
+
+    // Logger l'action automod
+    const logChannel = getLogChannel(guild, "automod");
+    if (logChannel) {
+      const logEmbed = new EmbedBuilder()
+        .setTitle('🚨 Automod Action')
+        .addFields(
+          { name: 'Member', value: `${member.user.tag} (<@${userId}>)`, inline: true },
+          { name: 'Rule', value: rule.name, inline: true },
+          { name: 'Violation', value: violationType, inline: true },
+          { name: 'Channel', value: `<#${channelId}>`, inline: true },
+          { name: 'Reason', value: reason, inline: false },
+          { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+        )
+        .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+        .setColor(0xff0000)
+        .setFooter({ text: 'Discord Automod' })
+        .setTimestamp(new Date());
+
+      await logChannel.send({ embeds: [logEmbed] });
+      console.log(`Logged automod action for ${member.user.tag}`);
+    }
+
+  } catch (error) {
+    console.error('Error handling automod action:', error);
   }
 });
 

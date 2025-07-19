@@ -187,19 +187,6 @@ module.exports = {
         }
       } catch {}
     } else if (sub === 'warn') {
-      // DM the user with embed
-      try {
-        const embed = new EmbedBuilder()
-          .setTitle('⚠️ Warning')
-          .setDescription(
-            `You have received a warning on **${interaction.guild.name}**.\n\n` +
-            `**Reason:** ${reason}\n\n` +
-            `Please respect the server rules. If in doubt, check the <#rules> channel or ask a moderator.`
-          )
-          .setColor(0xffc300)
-          .setTimestamp();
-        await user.send({ embeds: [embed] });
-      } catch {}
       // Add to warns.json
       const fs = require('fs');
       const path = require('path');
@@ -216,28 +203,116 @@ module.exports = {
         date: new Date().toLocaleString()
       });
       fs.writeFileSync(warnsPath, JSON.stringify(warnsData, null, 2));
-      await interaction.reply({ content: `⚠️ ${user.tag} warned. Reason: ${reason}`, ephemeral: true });
+
+      // Get current warning count
+      const currentWarnCount = warnsData[interaction.guild.id][user.id].length;
+
+      // Check for automatic actions
+      const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+      const warnActions = settings[interaction.guild.id]?.warnActions || {};
+      const actionToTake = warnActions[currentWarnCount];
+
+      let actionMessage = '';
+      let actionExecuted = false;
+
+      if (actionToTake) {
+        actionExecuted = true;
+        
+        switch (actionToTake) {
+          case 'kick':
+            try {
+              await member.kick(`Automatic kick after ${currentWarnCount} warning(s)`);
+              actionMessage = `\n\n🚨 **Automatic kick** triggered after ${currentWarnCount} warning(s).`;
+            } catch (error) {
+              actionMessage = `\n\n❌ Failed to automatically kick user.`;
+            }
+            break;
+
+          case 'ban':
+            try {
+              await member.ban({ reason: `Automatic ban after ${currentWarnCount} warning(s)` });
+              actionMessage = `\n\n🚨 **Automatic ban** triggered after ${currentWarnCount} warning(s).`;
+            } catch (error) {
+              actionMessage = `\n\n❌ Failed to automatically ban user.`;
+            }
+            break;
+
+          case 'mute_10':
+          case 'mute_30':
+          case 'mute_60':
+          case 'mute_1440':
+            const muteRole = interaction.guild.roles.cache.find(r => r.name.toLowerCase() === 'mute');
+            if (muteRole) {
+              const duration = parseInt(actionToTake.split('_')[1]);
+              try {
+                await member.roles.add(muteRole, `Automatic mute after ${currentWarnCount} warning(s)`);
+                actionMessage = `\n\n🔇 **Automatic mute** (${duration} minutes) triggered after ${currentWarnCount} warning(s).`;
+                
+                // Auto-unmute after duration
+                setTimeout(async () => {
+                  const freshMember = await interaction.guild.members.fetch(user.id).catch(() => null);
+                  if (freshMember && freshMember.roles.cache.has(muteRole.id)) {
+                    await freshMember.roles.remove(muteRole, 'End of automatic mute').catch(() => {});
+                  }
+                }, duration * 60 * 1000);
+              } catch (error) {
+                actionMessage = `\n\n❌ Failed to automatically mute user.`;
+              }
+            } else {
+              actionMessage = `\n\n❌ No mute role found for automatic mute.`;
+            }
+            break;
+
+          case 'clear_warns':
+            warnsData[interaction.guild.id][user.id] = [];
+            fs.writeFileSync(warnsPath, JSON.stringify(warnsData, null, 2));
+            actionMessage = `\n\n🧹 **All warnings cleared** after ${currentWarnCount} warning(s).`;
+            break;
+        }
+      }
+
+      // DM the user with embed
+      try {
+        const embed = new EmbedBuilder()
+          .setTitle('⚠️ Warning')
+          .setDescription(
+            `You have received a warning on **${interaction.guild.name}**.\n\n` +
+            `**Reason:** ${reason}\n\n` +
+            `**Warning Count:** ${currentWarnCount}${actionMessage}\n\n` +
+            `Please respect the server rules. If in doubt, check the <#rules> channel or ask a moderator.`
+          )
+          .setColor(actionExecuted ? 0xff0000 : 0xffc300)
+          .setTimestamp();
+        await user.send({ embeds: [embed] });
+      } catch {}
+
+      await interaction.reply({ 
+        content: `⚠️ ${user.tag} warned. Reason: ${reason}${actionMessage}`, 
+        ephemeral: true 
+      });
 
       // Moderation logging
       try {
-        const fs = require('fs');
-        const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
         const conf = settings[interaction.guild.id]?.logs;
         if (conf?.enabled && conf.categories?.mod && conf.channel) {
           const logChannel = interaction.guild.channels.cache.get(conf.channel);
           if (logChannel) {
-            logChannel.send({
-              embeds: [{
-                title: `⚠️ Sanction: Warn`,
-                fields: [
-                  { name: 'Member', value: `${user.tag}`, inline: true },
-                  { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
-                  { name: 'Reason', value: reason }
-                ],
-                color: 0xffa500,
-                timestamp: new Date()
-              }]
-            });
+            const logEmbed = new EmbedBuilder()
+              .setTitle(`⚠️ Sanction: Warn`)
+              .addFields(
+                { name: 'Member', value: `${user.tag}`, inline: true },
+                { name: 'Moderator', value: `${interaction.user.tag}`, inline: true },
+                { name: 'Reason', value: reason, inline: false },
+                { name: 'Warning Count', value: `${currentWarnCount}`, inline: true }
+              )
+              .setColor(0xffa500)
+              .setTimestamp();
+
+            if (actionExecuted) {
+              logEmbed.addFields({ name: 'Automatic Action', value: actionToTake, inline: true });
+            }
+
+            await logChannel.send({ embeds: [logEmbed] });
           }
         }
       } catch {}
