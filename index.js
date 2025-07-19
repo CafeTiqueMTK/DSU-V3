@@ -1109,6 +1109,377 @@ client.on('messageCreate', async (message) => {
       return;
     }
   }
+
+  // Funny Responses - Eat Detection
+  if (guildSettings.funny?.eat?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    // Détecter "je mange" ou "I eat" ou variations
+    if (content.includes('je mange') || content.includes('i eat') || content.includes('i\'m eating') || content.includes('i am eating')) {
+      // Cooldown pour éviter le spam (30 secondes par utilisateur)
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:eat`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) { // 30 secondes de cooldown
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      
+      // Répondre avec "Bon appétit!" en anglais
+      await message.reply('🍽️ **Bon appétit!** Enjoy your meal! 😋');
+      console.log(`Funny response sent to ${message.author.tag} for eat detection`);
+    }
+  }
+
+  // Funny Responses - Sleep Detection
+  if (guildSettings.funny?.sleep?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    // Détecter "I'm going to sleep" ou variations en anglais
+    if (content.includes('i\'m going to sleep') || content.includes('i am going to sleep') || 
+        content.includes('i\'m going to bed') || content.includes('i am going to bed') ||
+        content.includes('i\'m trying to sleep') || content.includes('i am trying to sleep') ||
+        content.includes('i\'m going to rest') || content.includes('i am going to rest')) {
+      // Cooldown pour éviter le spam (30 secondes par utilisateur)
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:sleep`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) { // 30 secondes de cooldown
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      
+      // Répondre avec "Bonne nuit!" en anglais
+      await message.reply('😴 **Bonne nuit!** Good night! Sweet dreams! 🌙');
+      console.log(`Funny response sent to ${message.author.tag} for sleep detection`);
+    }
+  }
+
+  // Funny Responses - Game Detection
+  if (guildSettings.funny?.game?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m playing') || content.includes('i\'m gaming') || content.includes('i am playing') || content.includes('i am gaming')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:game`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🎮 **Have fun gaming!** Good luck! 🎯');
+      console.log(`Funny response sent to ${message.author.tag} for game detection`);
+    }
+  }
+
+  // Funny Responses - Work Detection
+  if (guildSettings.funny?.work?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m working') || content.includes('i\'m at work') || content.includes('i am working') || content.includes('i am at work') || content.includes('i\'m busy working')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:work`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('💼 **Good luck with work!** Stay productive! 📈');
+      console.log(`Funny response sent to ${message.author.tag} for work detection`);
+    }
+  }
+
+  // Funny Responses - Study Detection
+  if (guildSettings.funny?.study?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m studying') || content.includes('i\'m learning') || content.includes('i am studying') || content.includes('i am learning') || content.includes('i\'m doing homework')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:study`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('📚 **Good luck studying!** You got this! 🧠');
+      console.log(`Funny response sent to ${message.author.tag} for study detection`);
+    }
+  }
+
+  // Funny Responses - Sport Detection
+  if (guildSettings.funny?.sport?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m exercising') || content.includes('i\'m working out') || content.includes('i am exercising') || content.includes('i am working out') || content.includes('i\'m at the gym')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:sport`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('💪 **Keep it up!** Stay strong! 🏋️');
+      console.log(`Funny response sent to ${message.author.tag} for sport detection`);
+    }
+  }
+
+  // Funny Responses - Travel Detection
+  if (guildSettings.funny?.travel?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m traveling') || content.includes('i\'m on a trip') || content.includes('i am traveling') || content.includes('i am on a trip') || content.includes('i\'m going somewhere')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:travel`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('✈️ **Safe travels!** Have a great trip! 🌍');
+      console.log(`Funny response sent to ${message.author.tag} for travel detection`);
+    }
+  }
+
+  // Funny Responses - Happy Detection
+  if (guildSettings.funny?.happy?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m happy') || content.includes('i\'m glad') || content.includes('i am happy') || content.includes('i am glad') || content.includes('i\'m excited')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:happy`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('😊 **That\'s great!** Keep smiling! ✨');
+      console.log(`Funny response sent to ${message.author.tag} for happy detection`);
+    }
+  }
+
+  // Funny Responses - Tired Detection
+  if (guildSettings.funny?.tired?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m tired') || content.includes('i\'m exhausted') || content.includes('i am tired') || content.includes('i am exhausted') || content.includes('i\'m sleepy')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:tired`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('😴 **Take a rest!** You deserve it! 💤');
+      console.log(`Funny response sent to ${message.author.tag} for tired detection`);
+    }
+  }
+
+  // Funny Responses - Stress Detection
+  if (guildSettings.funny?.stress?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m stressed') || content.includes('i\'m worried') || content.includes('i am stressed') || content.includes('i am worried') || content.includes('i\'m anxious')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:stress`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🧘 **Take a deep breath!** You\'ll be okay! 💙');
+      console.log(`Funny response sent to ${message.author.tag} for stress detection`);
+    }
+  }
+
+  // Funny Responses - Pizza Detection
+  if (guildSettings.funny?.pizza?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m eating pizza') || content.includes('i am eating pizza') || content.includes('i want pizza') || content.includes('pizza time')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:pizza`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🍕 **Pizza time!** Enjoy your slice! 🍕');
+      console.log(`Funny response sent to ${message.author.tag} for pizza detection`);
+    }
+  }
+
+  // Funny Responses - Coffee Detection
+  if (guildSettings.funny?.coffee?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m drinking coffee') || content.includes('i am drinking coffee') || content.includes('i need coffee') || content.includes('coffee time')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:coffee`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('☕ **Coffee time!** Stay awake! ⚡');
+      console.log(`Funny response sent to ${message.author.tag} for coffee detection`);
+    }
+  }
+
+  // Funny Responses - Music Detection
+  if (guildSettings.funny?.music?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m listening to music') || content.includes('i am listening to music') || content.includes('i\'m playing music')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:music`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🎵 **Great music!** Rock on! 🎸');
+      console.log(`Funny response sent to ${message.author.tag} for music detection`);
+    }
+  }
+
+  // Funny Responses - Concert Detection
+  if (guildSettings.funny?.concert?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m at a concert') || content.includes('i am at a concert') || content.includes('i\'m going to a concert')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:concert`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🎤 **Have fun at the concert!** Rock the night! 🎪');
+      console.log(`Funny response sent to ${message.author.tag} for concert detection`);
+    }
+  }
+
+  // Funny Responses - Movie Detection
+  if (guildSettings.funny?.movie?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m watching a movie') || content.includes('i am watching a movie') || content.includes('i\'m going to the cinema')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:movie`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🎬 **Enjoy the movie!** Don\'t forget the popcorn! 🍿');
+      console.log(`Funny response sent to ${message.author.tag} for movie detection`);
+    }
+  }
+
+  // Funny Responses - Series Detection
+  if (guildSettings.funny?.series?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('i\'m watching a series') || content.includes('i am watching a series') || content.includes('i\'m binging a show')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:series`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('📺 **Binge time!** Don\'t forget to sleep! 😴');
+      console.log(`Funny response sent to ${message.author.tag} for series detection`);
+    }
+  }
+
+  // Funny Responses - Birthday Detection
+  if (guildSettings.funny?.birthday?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('it\'s my birthday') || content.includes('it is my birthday') || content.includes('happy birthday to me')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:birthday`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🎉 **Happy Birthday!** Have an amazing day! 🎂');
+      console.log(`Funny response sent to ${message.author.tag} for birthday detection`);
+    }
+  }
+
+  // Funny Responses - Weekend Detection
+  if (guildSettings.funny?.weekend?.enabled) {
+    const content = message.content.toLowerCase();
+    
+    if (content.includes('it\'s weekend') || content.includes('it is weekend') || content.includes('weekend time') || content.includes('tgif')) {
+      if (!client.funnyCooldown) client.funnyCooldown = new Map();
+      const cooldownKey = `${message.guild.id}:${message.author.id}:weekend`;
+      const now = Date.now();
+      const lastResponse = client.funnyCooldown.get(cooldownKey) || 0;
+      
+      if (now - lastResponse < 30000) {
+        return;
+      }
+      
+      client.funnyCooldown.set(cooldownKey, now);
+      await message.reply('🎊 **Weekend vibes!** Have fun! 🎊');
+      console.log(`Funny response sent to ${message.author.tag} for weekend detection`);
+    }
+  }
 });
 
 // Fonction pour enregistrer les actions de modération
