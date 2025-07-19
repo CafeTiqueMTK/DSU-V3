@@ -102,6 +102,25 @@ module.exports = {
           triggerMetadata.mentionTotalLimit = 5;
         }
 
+        // Check if a rule of this type already exists
+        const existingRules = await interaction.guild.autoModerationRules.fetch();
+        const existingRuleOfType = existingRules.find(rule => rule.triggerType === triggerType);
+        
+        if (existingRuleOfType) {
+          const embed = new EmbedBuilder()
+            .setTitle('⚠️ Rule Already Exists')
+            .setDescription(`A rule of type **${type}** already exists.`)
+            .addFields(
+              { name: 'Existing Rule', value: `**${existingRuleOfType.name}** (\`${existingRuleOfType.id}\`)`, inline: false },
+              { name: 'Solution', value: 'Delete the existing rule first, or edit it instead.', inline: false }
+            )
+            .setColor(0xffa500)
+            .setTimestamp();
+          
+          await interaction.reply({ embeds: [embed], ephemeral: true });
+          return;
+        }
+
         const rule = await interaction.guild.autoModerationRules.create({
           name: name,
           creatorId: interaction.client.user.id,
@@ -227,6 +246,38 @@ module.exports = {
 
     } catch (error) {
       console.error('Automod rule error:', error);
+      
+      // Handle specific Discord API errors
+      if (error.code === 50035 && error.message.includes('AUTO_MODERATION_MAX_RULES_OF_TYPE_EXCEEDED')) {
+        const embed = new EmbedBuilder()
+          .setTitle('⚠️ Rule Limit Reached')
+          .setDescription('You have reached the maximum number of automod rules for this type.')
+          .addFields(
+            { name: 'Error', value: 'Maximum number of rules with this trigger type exceeded', inline: false },
+            { name: 'Solution', value: 'Delete an existing rule of the same type first, then create a new one.', inline: false }
+          )
+          .setColor(0xffa500)
+          .setTimestamp();
+        
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+      
+      if (error.code === 50035) {
+        const embed = new EmbedBuilder()
+          .setTitle('❌ Invalid Form Body')
+          .setDescription('The rule configuration is invalid.')
+          .addFields(
+            { name: 'Error', value: error.message || 'Unknown error', inline: false },
+            { name: 'Solution', value: 'Check your rule parameters and try again.', inline: false }
+          )
+          .setColor(0xff5555)
+          .setTimestamp();
+        
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+        return;
+      }
+      
       await interaction.reply({ 
         content: '❌ An error occurred while managing the automod rule.', 
         ephemeral: true 
