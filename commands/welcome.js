@@ -1,11 +1,5 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-const settingsPath = path.join(__dirname, '..', 'settings.json');
-
-function saveSettings(settings) {
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-}
+const { getGuildData, saveGuildData } = require('../utils/guildManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -36,38 +30,26 @@ module.exports = {
   async execute(interaction) {
     const guildId = interaction.guild.id;
 
-    let settings = {};
-    if (fs.existsSync(settingsPath)) {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    }
-
-    if (!settings[guildId]) settings[guildId] = {};
-    if (!settings[guildId].welcome) {
-      settings[guildId].welcome = {
-        enabled: false,
-        channel: null
-      };
-    }
-
+    // Utiliser le gestionnaire de guild pour obtenir les données
+    const settings = getGuildData(guildId, 'settings');
     const conf = settings[guildId].welcome;
     const sub = interaction.options.getSubcommand();
 
     if (sub === 'status') {
-      await interaction.reply({
-        embeds: [{
-          title: '🎉 Welcome System Status',
-          fields: [
-            { name: 'Status', value: conf.enabled ? '✅ Enabled' : '❌ Disabled' },
-            { name: 'Channel', value: conf.channel ? `<#${conf.channel}>` : 'Not set' }
-          ],
-          color: 0x00bfff
-        }],
-        ephemeral: true
-      });
+      const statusEmbed = new EmbedBuilder()
+        .setTitle('🎉 Welcome System Status')
+        .setDescription('Current configuration of the welcome system')
+        .addFields(
+          { name: '🎯 Status', value: conf.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+          { name: '📝 Channel', value: conf.channel ? `<#${conf.channel}>` : 'Not set', inline: true }
+        )
+        .setColor(conf.enabled ? 0x00ff00 : 0xff0000)
+        .setTimestamp();
+      await interaction.reply({ embeds: [statusEmbed], flags: 64 });
 
     } else if (sub === 'enable') {
       conf.enabled = true;
-      saveSettings(settings);
+      saveGuildData(guildId, settings, 'settings');
       const enableEmbed = new EmbedBuilder()
         .setTitle('✅ Welcome System Enabled')
         .setDescription('The welcome system is now active and will send welcome messages to new members.')
@@ -77,11 +59,11 @@ module.exports = {
         )
         .setColor(0x00ff00)
         .setTimestamp();
-      await interaction.reply({ embeds: [enableEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [enableEmbed], flags: 64 });
 
     } else if (sub === 'disable') {
       conf.enabled = false;
-      saveSettings(settings);
+      saveGuildData(guildId, settings, 'settings');
       const disableEmbed = new EmbedBuilder()
         .setTitle('❌ Welcome System Disabled')
         .setDescription('The welcome system is now inactive and will not send welcome messages.')
@@ -91,7 +73,7 @@ module.exports = {
         )
         .setColor(0xff0000)
         .setTimestamp();
-      await interaction.reply({ embeds: [disableEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [disableEmbed], flags: 64 });
 
     } else if (sub === 'setchannel') {
       const channel = interaction.options.getChannel('channel');
@@ -101,11 +83,11 @@ module.exports = {
           .setDescription('The specified channel was not found.')
           .setColor(0xff0000)
           .setTimestamp();
-        await interaction.reply({ embeds: [channelNotFoundEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [channelNotFoundEmbed], flags: 64 });
         return;
       }
       conf.channel = channel.id;
-      saveSettings(settings);
+      saveGuildData(guildId, settings, 'settings');
       const setChannelEmbed = new EmbedBuilder()
         .setTitle('✅ Welcome Channel Set')
         .setDescription(`The welcome channel has been successfully configured.`)
@@ -115,7 +97,7 @@ module.exports = {
         )
         .setColor(0x00ff00)
         .setTimestamp();
-      await interaction.reply({ embeds: [setChannelEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [setChannelEmbed], flags: 64 });
 
     } else if (sub === 'test') {
       if (!conf.enabled || !conf.channel) {
@@ -128,7 +110,7 @@ module.exports = {
           )
           .setColor(0xffa500)
           .setTimestamp();
-        return interaction.reply({ embeds: [testErrorEmbed], ephemeral: true });
+        return interaction.reply({ embeds: [testErrorEmbed], flags: 64 });
       }
 
       const member = interaction.member;
@@ -154,7 +136,7 @@ module.exports = {
         )
         .setColor(0x00ff00)
         .setTimestamp();
-      await interaction.reply({ embeds: [testSuccessEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [testSuccessEmbed], flags: 64 });
     }
   }
 };
