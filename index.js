@@ -1,7 +1,7 @@
 // Load environment variables
 require('dotenv').config();
 
-const { Client, GatewayIntentBits, Collection, Events, REST, Routes, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Collection, Events, REST, Routes, EmbedBuilder, ButtonBuilder, ButtonStyle, ActionRowBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const { readFileSync, promises: { readFile } } = require('fs');
@@ -430,21 +430,21 @@ client.on(Events.InteractionCreate, async interaction => {
     }
     const guildId = interaction.guild.id;
     if (!ticketsConfig[guildId] || !ticketsConfig[guildId].setup) {
-      return await interaction.reply({ content: '❌ Le système de tickets n\'est pas configuré.', ephemeral: true });
+      return await interaction.reply({ content: '❌ Ticket system is not configured.', flags: 64 });
     }
 
-    // Vérifie si l'utilisateur a déjà un ticket ouvert
+    // Check if the user already has an open ticket
     const userId = interaction.user.id;
     const activeTickets = ticketsConfig[guildId].activeTickets || {};
     const existingTicket = Object.values(activeTickets).find(t => t.userId === userId);
     if (existingTicket) {
-      return await interaction.reply({ content: '❌ Vous avez déjà un ticket ouvert.', ephemeral: true });
+      return await interaction.reply({ content: '❌ You already have an open ticket.', flags: 64 });
     }
 
-    // Crée le ticket
+    // Create the ticket
     const category = interaction.guild.channels.cache.get(ticketsConfig[guildId].ticketsCategory);
     if (!category) {
-      return await interaction.reply({ content: '❌ Catégorie de tickets introuvable.', ephemeral: true });
+      return await interaction.reply({ content: '❌ Ticket category not found.', flags: 64 });
     }
 
     const ticketName = `${ticketsConfig[guildId].ticketPrefix || 'ticket'}-${interaction.user.username}`;
@@ -468,10 +468,23 @@ client.on(Events.InteractionCreate, async interaction => {
       ],
     });
 
-    const welcomeMessage = ticketsConfig[guildId].welcomeMessage || "Bienvenue dans votre ticket ! Un membre du support vous répondra bientôt.";
-    await channel.send(`<@${userId}> <@&${ticketsConfig[guildId].supportRole}>\n${welcomeMessage}`);
+    const welcomeMessage = ticketsConfig[guildId].welcomeMessage || "Welcome to your ticket! A support member will assist you soon.";
+    // Send embed with close button
+    const ticketEmbed = new EmbedBuilder()
+      .setTitle('🎫 Support Ticket')
+      .setDescription(`<@${userId}> <@&${ticketsConfig[guildId].supportRole}>\n${welcomeMessage}`)
+      .setColor(0x00ff99)
+      .setTimestamp();
+    const closeButton = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('close_ticket')
+        .setLabel('Close Ticket')
+        .setStyle(ButtonStyle.Danger)
+        .setEmoji('🔒')
+    );
+    await channel.send({ embeds: [ticketEmbed], components: [closeButton] });
 
-    // Ajoute le ticket à la config
+    // Add the ticket to config
     const ticketId = channel.id;
     ticketsConfig[guildId].activeTickets[ticketId] = {
       channelId: channel.id,
@@ -481,7 +494,7 @@ client.on(Events.InteractionCreate, async interaction => {
     };
     fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
 
-    await interaction.reply({ content: `✅ Ticket créé: ${channel}`, ephemeral: true });
+    await interaction.reply({ content: `✅ Ticket created: ${channel}`, flags: 64 });
   } else if (interaction.isButton() && interaction.customId === 'close_ticket') {
     // Handle ticket close button
     const guildId = interaction.guild.id;
@@ -494,45 +507,45 @@ client.on(Events.InteractionCreate, async interaction => {
     
     const guildConfig = ticketsConfig[guildId];
     if (!guildConfig) {
-      await interaction.reply({ content: '❌ Configuration des tickets introuvable.', ephemeral: true });
+      await interaction.reply({ content: '❌ Ticket configuration not found.', flags: 64 });
       return;
     }
 
-    // Trouver le ticket correspondant au canal
+    // Find the ticket for this channel
     const ticketId = Object.keys(guildConfig.activeTickets || {}).find(
       id => guildConfig.activeTickets[id].channelId === interaction.channel.id
     );
 
     if (!ticketId) {
-      await interaction.reply({ content: '❌ Ticket introuvable.', ephemeral: true });
+      await interaction.reply({ content: '❌ Ticket not found.', flags: 64 });
       return;
     }
 
     const ticketData = guildConfig.activeTickets[ticketId];
     
-    // Créer l'embed de fermeture
+    // Create close embed
     const closeEmbed = new EmbedBuilder()
-      .setTitle('🎫 Ticket fermé')
-      .setDescription(`Ticket fermé par ${interaction.user.tag}`)
+      .setTitle('🔒 Ticket Closed')
+      .setDescription(`This ticket was closed by ${interaction.user.tag}`)
       .setColor(0xff5555)
       .setTimestamp();
 
     await interaction.channel.send({ embeds: [closeEmbed] });
 
-    // Supprimer le canal après 5 secondes
+    // Delete the channel after 5 seconds
     setTimeout(async () => {
       try {
         await interaction.channel.delete();
       } catch (error) {
-        console.error('Erreur lors de la suppression du canal:', error);
+        console.error('Error deleting channel:', error);
       }
     }, 5000);
 
-    // Supprimer le ticket de la configuration
+    // Remove the ticket from config
     delete guildConfig.activeTickets[ticketId];
     fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
 
-    await interaction.reply({ content: '✅ Ticket fermé. Le canal sera supprimé dans 5 secondes.', ephemeral: true });
+    await interaction.reply({ content: '✅ Ticket closed. This channel will be deleted in 5 seconds.', flags: 64 });
 
     // Log ticket closure
     const logChannel = getLogChannel(interaction.guild, "tickets");
