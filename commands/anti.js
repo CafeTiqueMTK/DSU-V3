@@ -96,6 +96,26 @@ module.exports = {
             )
             .setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub.setName('raid')
+        .setDescription('Configure anti raid protection')
+        .addStringOption(opt =>
+          opt.setName('action')
+            .setDescription('Enable or disable anti raid')
+            .addChoices(
+              { name: 'Enable', value: 'enable' },
+              { name: 'Disable', value: 'disable' }
+            )
+            .setRequired(true)
+        )
+        .addIntegerOption(opt =>
+          opt.setName('threshold')
+            .setDescription('Number of joins in 10 seconds to trigger (default: 5)')
+            .setMinValue(3)
+            .setMaxValue(20)
+            .setRequired(false)
+        )
     ),
 
   async execute(interaction) {
@@ -130,6 +150,9 @@ module.exports = {
     }
     if (!settings[guildId].antiBot) {
       settings[guildId].antiBot = { enabled: false };
+    }
+    if (!settings[guildId].antiRaid) {
+      settings[guildId].antiRaid = { enabled: false, threshold: 5, recentJoins: [] };
     }
 
     try {
@@ -267,6 +290,30 @@ module.exports = {
             { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
             { name: 'Action', value: 'Bot kick + DM warning', inline: true },
             { name: 'Detection', value: 'External bots joining', inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+
+      } else if (sub === 'raid') {
+        const action = interaction.options.getString('action');
+        const threshold = interaction.options.getInteger('threshold');
+        const enabled = action === 'enable';
+        
+        settings[guildId].antiRaid.enabled = enabled;
+        if (threshold) {
+          settings[guildId].antiRaid.threshold = threshold;
+        }
+        saveGuildData(guildId, settings, 'settings');
+
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Raid Enabled' : '❌ Anti Raid Disabled')
+          .setDescription(`Anti raid protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Threshold', value: `${settings[guildId].antiRaid.threshold} joins in 10s`, inline: true },
+            { name: 'Action', value: 'Server lockdown + Kick recent joins', inline: true }
           )
           .setColor(enabled ? 0x00ff99 : 0xff5555)
           .setTimestamp();

@@ -177,6 +177,7 @@ module.exports = {
         const antiKeywords = settings[guildId].antiKeywords || { enabled: false, keywords: [] };
         const antiRoles = settings[guildId].antiRoles || { enabled: false };
         const antiBot = settings[guildId].antiBot || { enabled: false };
+        const antiRaid = settings[guildId].antiRaid || { enabled: false, threshold: 5 };
 
         const embed = new EmbedBuilder()
           .setTitle('📋 Automod & Anti Protection Status')
@@ -191,7 +192,8 @@ module.exports = {
             { name: '🌐 Anti Links', value: `${antiLinks.enabled ? '✅ Enabled' : '❌ Disabled'}\nDetection: External links`, inline: true },
             { name: '🔤 Anti Keywords', value: `${antiKeywords.enabled ? '✅ Enabled' : '❌ Disabled'}\nKeywords: ${antiKeywords.keywords.length}`, inline: true },
             { name: '🎭 Anti Role Mentions', value: `${antiRoles.enabled ? '✅ Enabled' : '❌ Disabled'}\nBlocked: ${automod.blockedRoles.length} roles`, inline: true },
-            { name: '🤖 Anti Bot', value: `${antiBot.enabled ? '✅ Enabled' : '❌ Disabled'}\nAction: Kick unauthorized bots`, inline: true }
+            { name: '🤖 Anti Bot', value: `${antiBot.enabled ? '✅ Enabled' : '❌ Disabled'}\nAction: Kick unauthorized bots`, inline: true },
+            { name: '🚨 Anti Raid', value: `${antiRaid.enabled ? '✅ Enabled' : '❌ Disabled'}\nThreshold: ${antiRaid.threshold} joins/10s`, inline: true }
           )
           .setColor(automod.enabled ? 0x00ff99 : 0xff5555)
           .setFooter({ text: 'DSU Automod & Anti Protection System' })
