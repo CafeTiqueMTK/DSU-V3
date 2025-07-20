@@ -5,7 +5,6 @@ const settingsPath = path.join(__dirname, '../settings.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) 
     .setName('mod')
     .setDescription('Moderation commands (ban, kick, warn, mute)')
     .addSubcommand(sub =>
@@ -70,24 +69,35 @@ module.exports = {
             .setDescription('Reason for mute')
             .setRequired(false)
         )
-    )
-    .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers | PermissionFlagsBits.BanMembers),
+    ),
   async execute(interaction) {
-    // --- Custom moderator role check ---
-    let allow = false;
-    try {
-      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-      const guildId = interaction.guild.id;
-      const moderatorRoleId = settings[guildId]?.moderatorRole;
-      if (moderatorRoleId) {
-        if (interaction.member.roles.cache.has(moderatorRoleId)) {
-          allow = true;
+    // --- Permission check for Administrators and Moderators ---
+    let hasPermission = false;
+    
+    // Check if user is Administrator
+    if (interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      hasPermission = true;
+    }
+    
+    // Check for custom moderator role
+    if (!hasPermission) {
+      try {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+        const guildId = interaction.guild.id;
+        const moderatorRoleId = settings[guildId]?.moderatorRole;
+        if (moderatorRoleId && interaction.member.roles.cache.has(moderatorRoleId)) {
+          hasPermission = true;
         }
-      }
-    } catch {}
-    // If no role set, fallback to native permissions
-    if (!allow && !interaction.memberPermissions.has(PermissionFlagsBits.KickMembers) || interaction.memberPermissions.has(PermissionFlagsBits.BanMembers)) {
-      await interaction.reply({ content: 'Permission denied. Only moderators can use this command.', ephemeral: true });
+      } catch {}
+    }
+    
+    // Check for native moderation permissions (KickMembers or BanMembers)
+    if (!hasPermission && (interaction.member.permissions.has(PermissionFlagsBits.KickMembers) || interaction.member.permissions.has(PermissionFlagsBits.BanMembers))) {
+      hasPermission = true;
+    }
+    
+    if (!hasPermission) {
+      await interaction.reply({ content: 'Permission denied. Only administrators and moderators can use this command.', ephemeral: true });
       return;
     }
 
@@ -105,13 +115,9 @@ module.exports = {
       return;
     }
 
-    if (!interaction.member.permissions.has(PermissionFlagsBits.KickMembers)) {
-      await interaction.reply({ content: 'Permission denied.', ephemeral: true });
-      return;
-    }
-
     if (sub === 'ban') {
-      if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers)) {
+      // Check if user has ban permission or is admin
+      if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers) && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
         await interaction.reply({ content: 'Permission denied to ban.', ephemeral: true });
         return;
       }
