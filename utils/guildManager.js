@@ -89,7 +89,8 @@ function initializeGuildData(guildId, dataType = 'all') {
           channel: null
         },
         warnActions: {},
-        antiBot: { enabled: false }
+        antiBot: { enabled: false },
+        antiRaid: { enabled: false, threshold: 5, recentJoins: [] }
       };
       saveData(settingsPath, settings);
     }

@@ -2254,6 +2254,163 @@ client.on('guildMemberAdd', async (member) => {
   }
 });
 
+// Anti raid protection
+client.on('guildMemberAdd', async (member) => {
+  try {
+    const { getGuildData, saveGuildData } = require('./utils/guildManager');
+    const settings = getGuildData(member.guild.id, 'settings');
+    
+    // Check if anti-raid protection is enabled
+    if (settings[member.guild.id]?.antiRaid?.enabled) {
+      const antiRaid = settings[member.guild.id].antiRaid;
+      const now = Date.now();
+      
+      // Initialize recentJoins if it doesn't exist
+      if (!antiRaid.recentJoins) {
+        antiRaid.recentJoins = [];
+      }
+      
+      // Add current join to the list
+      antiRaid.recentJoins.push({
+        userId: member.id,
+        userTag: member.user.tag,
+        timestamp: now
+      });
+      
+      // Remove joins older than 10 seconds
+      antiRaid.recentJoins = antiRaid.recentJoins.filter(join => now - join.timestamp < 10000);
+      
+      // Check if raid threshold is exceeded
+      if (antiRaid.recentJoins.length >= antiRaid.threshold) {
+        console.log(`🚨 RAID DETECTED in ${member.guild.name}! ${antiRaid.recentJoins.length} joins in 10 seconds`);
+        
+        // Save the updated settings
+        saveGuildData(member.guild.id, settings, 'settings');
+        
+        // Trigger raid response
+        await handleRaidResponse(member.guild, antiRaid.recentJoins);
+        
+        // Clear the recent joins after handling
+        antiRaid.recentJoins = [];
+        saveGuildData(member.guild.id, settings, 'settings');
+      } else {
+        // Save the updated settings
+        saveGuildData(member.guild.id, settings, 'settings');
+      }
+    }
+  } catch (error) {
+    console.error('Error in anti-raid protection:', error);
+  }
+});
+
+// Function to handle raid response
+async function handleRaidResponse(guild, recentJoins) {
+  try {
+    // Log the raid detection
+    const logChannel = getLogChannel(guild, "automod");
+    if (logChannel) {
+      const raidEmbed = new EmbedBuilder()
+        .setTitle('🚨 RAID DETECTED!')
+        .setDescription(`A raid has been detected in the server!`)
+        .addFields(
+          { name: 'Joins Detected', value: `${recentJoins.length} users in 10 seconds`, inline: true },
+          { name: 'Server', value: guild.name, inline: true },
+          { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: true },
+          { name: 'Recent Joins', value: recentJoins.map(join => `• ${join.userTag} (<@${join.userId}>)`).join('\n'), inline: false }
+        )
+        .setColor(0xff0000)
+        .setFooter({ text: 'DSU Anti-Raid Protection' })
+        .setTimestamp(new Date());
+      await logChannel.send({ embeds: [raidEmbed] });
+    }
+
+    // Kick all recent joins (except bots if anti-bot is disabled)
+    const kickedUsers = [];
+    const failedKicks = [];
+    
+    for (const join of recentJoins) {
+      try {
+        const member = await guild.members.fetch(join.userId);
+        
+        // Don't kick if it's a bot and anti-bot is disabled
+        const settings = getGuildData(guild.id, 'settings');
+        if (member.user.bot && !settings[guild.id]?.antiBot?.enabled) {
+          console.log(`Skipping bot ${join.userTag} in raid response`);
+          continue;
+        }
+        
+        await member.kick('Anti-raid protection: Raid detected');
+        kickedUsers.push(join.userTag);
+        console.log(`Kicked ${join.userTag} due to raid`);
+        
+        // Add small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (kickError) {
+        console.error(`Failed to kick ${join.userTag}:`, kickError);
+        failedKicks.push(join.userTag);
+      }
+    }
+
+    // Log the results
+    if (logChannel) {
+      const resultsEmbed = new EmbedBuilder()
+        .setTitle('🛡️ Raid Response Results')
+        .addFields(
+          { name: 'Users Kicked', value: kickedUsers.length.toString(), inline: true },
+          { name: 'Failed Kicks', value: failedKicks.length.toString(), inline: true },
+          { name: 'Total Detected', value: recentJoins.length.toString(), inline: true }
+        )
+        .setColor(0x00ff00)
+        .setTimestamp(new Date());
+      
+      if (kickedUsers.length > 0) {
+        resultsEmbed.addFields({
+          name: 'Successfully Kicked',
+          value: kickedUsers.join(', '),
+          inline: false
+        });
+      }
+      
+      if (failedKicks.length > 0) {
+        resultsEmbed.addFields({
+          name: 'Failed to Kick',
+          value: failedKicks.join(', '),
+          inline: false
+        });
+      }
+      
+      await logChannel.send({ embeds: [resultsEmbed] });
+    }
+
+    // Optional: Enable server lockdown (disable invites temporarily)
+    try {
+      const invites = await guild.invites.fetch();
+      for (const [code, invite] of invites) {
+        try {
+          await invite.delete('Anti-raid protection: Server lockdown');
+        } catch (deleteError) {
+          console.error(`Failed to delete invite ${code}:`, deleteError);
+        }
+      }
+      
+      if (logChannel) {
+        const lockdownEmbed = new EmbedBuilder()
+          .setTitle('🔒 Server Lockdown Activated')
+          .setDescription('All invites have been deleted to prevent further raids.')
+          .setColor(0xffa500)
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [lockdownEmbed] });
+      }
+    } catch (lockdownError) {
+      console.error('Failed to enable server lockdown:', lockdownError);
+    }
+
+  } catch (error) {
+    console.error('Error handling raid response:', error);
+  }
+}
+
 // Anti bot protection
 client.on('guildMemberAdd', async (member) => {
   // Ignore if not a bot
