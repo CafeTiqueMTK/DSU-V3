@@ -2254,6 +2254,109 @@ client.on('guildMemberAdd', async (member) => {
   }
 });
 
+// Anti bot protection
+client.on('guildMemberAdd', async (member) => {
+  // Ignore if not a bot
+  if (!member.user.bot) return;
+
+  try {
+    const { getGuildData } = require('./utils/guildManager');
+    const settings = getGuildData(member.guild.id, 'settings');
+    
+    // Check if anti-bot protection is enabled
+    if (!settings[member.guild.id]?.antiBot?.enabled) return;
+
+    // Check if the bot is authorized (has proper permissions or is verified)
+    const botMember = member;
+    const botUser = member.user;
+    
+    // Allow verified bots and bots with proper permissions
+    if (botUser.verified || botUser.flags?.has('VerifiedBot')) {
+      console.log(`Verified bot ${botUser.tag} joined ${member.guild.name} - allowed`);
+      return;
+    }
+
+    // Check if bot has proper OAuth2 scopes (simplified check)
+    // In a real implementation, you might want to check the bot's invite URL or permissions
+    const hasProperPermissions = botMember.permissions.has('SendMessages') && 
+                                botMember.permissions.has('ViewChannel') &&
+                                botMember.permissions.has('UseSlashCommands');
+
+    if (hasProperPermissions) {
+      console.log(`Bot ${botUser.tag} has proper permissions in ${member.guild.name} - allowed`);
+      return;
+    }
+
+    // Kick the unauthorized bot
+    try {
+      await member.kick('Anti-bot protection: Unauthorized bot detected');
+      console.log(`Kicked unauthorized bot ${botUser.tag} from ${member.guild.name}`);
+
+      // Send warning to bot owner (if possible)
+      try {
+        const warningEmbed = new EmbedBuilder()
+          .setTitle('🤖 Bot Blocked')
+          .setDescription('Your bot was blocked from joining this server due to anti-bot protection.')
+          .addFields(
+            { name: 'Server', value: member.guild.name, inline: true },
+            { name: 'Bot', value: botUser.tag, inline: true },
+            { name: 'Reason', value: 'Unauthorized bot detected', inline: false },
+            { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+          )
+          .setColor(0xff0000)
+          .setTimestamp();
+
+        // Note: We can't DM the bot owner directly, but we can log this
+        console.log(`Bot ${botUser.tag} was blocked from ${member.guild.name}`);
+      } catch (dmError) {
+        console.log(`Could not send warning for bot ${botUser.tag}: ${dmError.message}`);
+      }
+
+      // Log the action
+      const logChannel = getLogChannel(member.guild, "automod");
+      if (logChannel) {
+        const logEmbed = new EmbedBuilder()
+          .setTitle('🤖 Unauthorized Bot Blocked')
+          .addFields(
+            { name: 'Bot', value: `${botUser.tag} (<@${botUser.id}>)`, inline: true },
+            { name: 'Bot ID', value: botUser.id, inline: true },
+            { name: 'Action', value: 'Bot kicked', inline: true },
+            { name: 'Reason', value: 'Unauthorized bot detected', inline: true },
+            { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+          )
+          .setThumbnail(botUser.displayAvatarURL({ dynamic: true }))
+          .setColor(0xff0000)
+          .setFooter({ text: 'DSU Anti-Bot Protection' })
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [logEmbed] });
+      }
+
+    } catch (kickError) {
+      console.error(`Failed to kick bot ${botUser.tag}:`, kickError);
+      
+      // Log the failed kick attempt
+      const logChannel = getLogChannel(member.guild, "automod");
+      if (logChannel) {
+        const logEmbed = new EmbedBuilder()
+          .setTitle('⚠️ Failed to Kick Bot')
+          .addFields(
+            { name: 'Bot', value: `${botUser.tag} (<@${botUser.id}>)`, inline: true },
+            { name: 'Error', value: kickError.message, inline: true },
+            { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+          )
+          .setThumbnail(botUser.displayAvatarURL({ dynamic: true }))
+          .setColor(0xffa500)
+          .setFooter({ text: 'DSU Anti-Bot Protection' })
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [logEmbed] });
+      }
+    }
+
+  } catch (error) {
+    console.error('Error in anti-bot protection:', error);
+  }
+});
+
 // Anti role mention protection
 client.on('messageCreate', async (message) => {
   // Ignore bot messages and DMs

@@ -176,6 +176,7 @@ module.exports = {
         const antiLinks = settings[guildId].antiLinks || { enabled: false };
         const antiKeywords = settings[guildId].antiKeywords || { enabled: false, keywords: [] };
         const antiRoles = settings[guildId].antiRoles || { enabled: false };
+        const antiBot = settings[guildId].antiBot || { enabled: false };
 
         const embed = new EmbedBuilder()
           .setTitle('📋 Automod & Anti Protection Status')
@@ -189,7 +190,8 @@ module.exports = {
             { name: '🔗 Anti Invites', value: `${antiInvites.enabled ? '✅ Enabled' : '❌ Disabled'}\nDetection: Discord links`, inline: true },
             { name: '🌐 Anti Links', value: `${antiLinks.enabled ? '✅ Enabled' : '❌ Disabled'}\nDetection: External links`, inline: true },
             { name: '🔤 Anti Keywords', value: `${antiKeywords.enabled ? '✅ Enabled' : '❌ Disabled'}\nKeywords: ${antiKeywords.keywords.length}`, inline: true },
-            { name: '🎭 Anti Role Mentions', value: `${antiRoles.enabled ? '✅ Enabled' : '❌ Disabled'}\nBlocked: ${automod.blockedRoles.length} roles`, inline: true }
+            { name: '🎭 Anti Role Mentions', value: `${antiRoles.enabled ? '✅ Enabled' : '❌ Disabled'}\nBlocked: ${automod.blockedRoles.length} roles`, inline: true },
+            { name: '🤖 Anti Bot', value: `${antiBot.enabled ? '✅ Enabled' : '❌ Disabled'}\nAction: Kick unauthorized bots`, inline: true }
           )
           .setColor(automod.enabled ? 0x00ff99 : 0xff5555)
           .setFooter({ text: 'DSU Automod & Anti Protection System' })

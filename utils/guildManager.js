@@ -88,7 +88,8 @@ function initializeGuildData(guildId, dataType = 'all') {
           enabled: false,
           channel: null
         },
-        warnActions: {}
+        warnActions: {},
+        antiBot: { enabled: false }
       };
       saveData(settingsPath, settings);
     }
