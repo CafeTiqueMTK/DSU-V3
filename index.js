@@ -423,152 +423,65 @@ client.on(Events.InteractionCreate, async interaction => {
     }
   } else if (interaction.isButton() && interaction.customId === 'create_ticket') {
     // Handle ticket creation button
-    const guildId = interaction.guild.id;
     const ticketsPath = path.join(__dirname, 'tickets.json');
-    
-    // Charger la configuration des tickets
     let ticketsConfig = {};
     if (fs.existsSync(ticketsPath)) {
       ticketsConfig = JSON.parse(fs.readFileSync(ticketsPath, 'utf-8'));
     }
-    
-    const guildConfig = ticketsConfig[guildId];
-    if (!guildConfig || !guildConfig.setup) {
-      await interaction.reply({ content: '❌ Système de tickets non configuré.', ephemeral: true });
-      return;
+    const guildId = interaction.guild.id;
+    if (!ticketsConfig[guildId] || !ticketsConfig[guildId].setup) {
+      return await interaction.reply({ content: '❌ Le système de tickets n\'est pas configuré.', ephemeral: true });
     }
 
-    // Vérifier si l'utilisateur a déjà un ticket ouvert
-    const existingTicket = Object.values(guildConfig.activeTickets || {}).find(
-      ticket => ticket.userId === interaction.user.id
-    );
-    
+    // Vérifie si l'utilisateur a déjà un ticket ouvert
+    const userId = interaction.user.id;
+    const activeTickets = ticketsConfig[guildId].activeTickets || {};
+    const existingTicket = Object.values(activeTickets).find(t => t.userId === userId);
     if (existingTicket) {
-      const channel = interaction.guild.channels.cache.get(existingTicket.channelId);
-      if (channel) {
-        await interaction.reply({ 
-          content: `❌ Vous avez déjà un ticket ouvert : ${channel}`, 
-          ephemeral: true 
-        });
-        return;
-      }
+      return await interaction.reply({ content: '❌ Vous avez déjà un ticket ouvert.', ephemeral: true });
     }
 
-    // Créer le modal pour le nom du ticket
-    const modal = new ModalBuilder()
-      .setCustomId('ticket_name_modal')
-      .setTitle('Nommer votre ticket');
-
-    const ticketNameInput = new TextInputBuilder()
-      .setCustomId('ticket_name')
-      .setLabel('Nom du ticket')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('Ex: Bug Minecraft, Question Discord, Suggestion...')
-      .setRequired(true)
-      .setMaxLength(32);
-
-    const firstActionRow = new ActionRowBuilder().addComponents(ticketNameInput);
-    modal.addComponents(firstActionRow);
-    await interaction.showModal(modal);
-    
-    // Créer le canal du ticket
-    const category = interaction.guild.channels.cache.get(guildConfig.ticketsCategory);
+    // Crée le ticket
+    const category = interaction.guild.channels.cache.get(ticketsConfig[guildId].ticketsCategory);
     if (!category) {
-      await interaction.reply({ content: '❌ Catégorie des tickets introuvable.', ephemeral: true });
-      return;
+      return await interaction.reply({ content: '❌ Catégorie de tickets introuvable.', ephemeral: true });
     }
 
-    try {
-      const ticketChannel = await interaction.guild.channels.create({
-        name: ticketId,
-        type: 0, // Text channel
-        parent: category,
-        permissionOverwrites: [
-          {
-            id: interaction.guild.id,
-            deny: ['ViewChannel']
-          },
-          {
-            id: interaction.user.id,
-            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
-          },
-          {
-            id: guildConfig.supportRole,
-            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory', 'ManageMessages']
-          }
-        ]
-      });
+    const ticketName = `${ticketsConfig[guildId].ticketPrefix || 'ticket'}-${interaction.user.username}`;
+    const channel = await interaction.guild.channels.create({
+      name: ticketName,
+      type: 0, // 0 = GUILD_TEXT
+      parent: category.id,
+      permissionOverwrites: [
+        {
+          id: interaction.guild.roles.everyone,
+          deny: ['ViewChannel'],
+        },
+        {
+          id: userId,
+          allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'],
+        },
+        {
+          id: ticketsConfig[guildId].supportRole,
+          allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory'],
+        },
+      ],
+    });
 
-      // Créer l'embed de bienvenue du ticket
-      const welcomeEmbed = new EmbedBuilder()
-        .setTitle(`🎫 Ticket ${ticketId}`)
-        .setDescription(guildConfig.welcomeMessage)
-        .addFields(
-          { name: '👤 Utilisateur', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
-          { name: '📅 Créé le', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: true }
-        )
-        .setColor(0x00ff99)
-        .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-        .setTimestamp();
+    const welcomeMessage = ticketsConfig[guildId].welcomeMessage || "Bienvenue dans votre ticket ! Un membre du support vous répondra bientôt.";
+    await channel.send(`<@${userId}> <@&${ticketsConfig[guildId].supportRole}>\n${welcomeMessage}`);
 
-      // Créer le bouton de fermeture
-      const closeButton = new ActionRowBuilder()
-        .addComponents(
-          new ButtonBuilder()
-            .setCustomId('close_ticket')
-            .setLabel('Fermer le ticket')
-            .setStyle(ButtonStyle.Danger)
-            .setEmoji('🔒')
-        );
+    // Ajoute le ticket à la config
+    const ticketId = channel.id;
+    ticketsConfig[guildId].activeTickets[ticketId] = {
+      channelId: channel.id,
+      userId: userId,
+      createdAt: Date.now(),
+      ticketName: ticketName,
+    };
+    fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
 
-      // Envoyer la mention du rôle support au-dessus de l'embed
-      await ticketChannel.send({
-        content: `<@&${guildConfig.supportRole}> - Nouveau ticket de ${interaction.user}`
-      });
-
-      // Envoyer l'embed de bienvenue avec le bouton de fermeture
-      await ticketChannel.send({
-        embeds: [welcomeEmbed],
-        components: [closeButton]
-      });
-
-      // Sauvegarder les informations du ticket
-      guildConfig.activeTickets[ticketId] = {
-        channelId: ticketChannel.id,
-        userId: interaction.user.id,
-        createdAt: Date.now()
-      };
-
-      fs.writeFileSync(ticketsPath, JSON.stringify(ticketsConfig, null, 2));
-
-      await interaction.reply({ 
-        content: `✅ Votre ticket a été créé : ${ticketChannel}`, 
-        ephemeral: true 
-      });
-
-      // Log de la création du ticket
-      const logChannel = getLogChannel(interaction.guild, "tickets");
-      if (logChannel) {
-        const embed = new EmbedBuilder()
-          .setTitle('🟢 Nouveau ticket créé')
-          .addFields(
-            { name: 'Ticket ID', value: ticketId, inline: true },
-            { name: 'Utilisateur', value: `${interaction.user.tag} (<@${interaction.user.id}>)`, inline: true },
-            { name: 'Canal', value: ticketChannel.toString(), inline: true }
-          )
-          .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-          .setColor(0x00ff99)
-          .setTimestamp(new Date());
-        await logChannel.send({ embeds: [embed] });
-      }
-
-    } catch (error) {
-      console.error('Erreur lors de la création du ticket:', error);
-      await interaction.reply({ 
-        content: '❌ Erreur lors de la création du ticket. Vérifiez les permissions du bot.', 
-        ephemeral: true 
-      });
-    }
+    await interaction.reply({ content: `✅ Ticket créé: ${channel}`, ephemeral: true });
   } else if (interaction.isButton() && interaction.customId === 'close_ticket') {
     // Handle ticket close button
     const guildId = interaction.guild.id;
@@ -748,7 +661,7 @@ client.on('guildMemberRemove', async member => {
   const logChannel = getLogChannel(member.guild, "farewell");
   if (logChannel) {
     const embed = new EmbedBuilder()
-      .setTitle(`� Log: Member Left`)
+      .setTitle(`🗑️ Log: Member Left`)
       .setDescription(`A user has left the server:\n• Tag: **${member.user.tag}**\n• ID: ${member.id}\n• Account created: <t:${Math.floor(member.user.createdTimestamp/1000)}:F>`)
       .setImage(member.user.displayAvatarURL({ dynamic: true }))
       .setColor(0xff5555)
