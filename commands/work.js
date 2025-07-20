@@ -238,10 +238,15 @@ module.exports = {
 
     } catch (error) {
       console.error('Error in work command:', error);
-      await interaction.reply({
-        content: '❌ An error occurred while processing your work.',
-        ephemeral: true
-      });
+      const errorEmbed = new EmbedBuilder()
+        .setTitle('❌ Work Error')
+        .setDescription('An error occurred while processing your work request.')
+        .addFields(
+          { name: '🔧 Issue', value: 'Please try again later or contact support if the problem persists.', inline: false }
+        )
+        .setColor(0xff0000)
+        .setTimestamp();
+      await interaction.reply({ embeds: [errorEmbed], ephemeral: true });
     }
   },
 }; 
