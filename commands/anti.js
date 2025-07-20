@@ -83,6 +83,19 @@ module.exports = {
             )
             .setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub.setName('bot')
+        .setDescription('Configure anti bot protection')
+        .addStringOption(opt =>
+          opt.setName('action')
+            .setDescription('Enable or disable anti bot')
+            .addChoices(
+              { name: 'Enable', value: 'enable' },
+              { name: 'Disable', value: 'disable' }
+            )
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -114,6 +127,9 @@ module.exports = {
     }
     if (!settings[guildId].antiRoles) {
       settings[guildId].antiRoles = { enabled: false };
+    }
+    if (!settings[guildId].antiBot) {
+      settings[guildId].antiBot = { enabled: false };
     }
 
     try {
@@ -231,6 +247,26 @@ module.exports = {
             { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
             { name: 'Action', value: 'Message deletion + DM warning', inline: true },
             { name: 'Detection', value: 'Blocked role mentions', inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+
+      } else if (sub === 'bot') {
+        const action = interaction.options.getString('action');
+        const enabled = action === 'enable';
+        
+        settings[guildId].antiBot.enabled = enabled;
+        saveGuildData(guildId, settings, 'settings');
+
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Bot Enabled' : '❌ Anti Bot Disabled')
+          .setDescription(`Anti bot protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Action', value: 'Bot kick + DM warning', inline: true },
+            { name: 'Detection', value: 'External bots joining', inline: true }
           )
           .setColor(enabled ? 0x00ff99 : 0xff5555)
           .setTimestamp();
