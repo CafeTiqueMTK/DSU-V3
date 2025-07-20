@@ -54,7 +54,8 @@ function initializeGuildData(guildId, dataType = 'all') {
             discordLink: { enabled: false },
             ghostPing: { enabled: false },
             spam: { enabled: false }
-          }
+          },
+          blockedRoles: []
         },
         logs: {
           enabled: false,
