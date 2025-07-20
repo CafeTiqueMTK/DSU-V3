@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const settingsPath = path.join(__dirname, '..', 'settings.json');
@@ -68,25 +68,68 @@ module.exports = {
     } else if (sub === 'enable') {
       conf.enabled = true;
       saveSettings(settings);
-      await interaction.reply({ content: '✅ The welcome system is now enabled.', ephemeral: true });
+      const enableEmbed = new EmbedBuilder()
+        .setTitle('✅ Welcome System Enabled')
+        .setDescription('The welcome system is now active and will send welcome messages to new members.')
+        .addFields(
+          { name: '🎯 Status', value: '✅ Enabled', inline: true },
+          { name: '📝 Channel', value: conf.channel ? `<#${conf.channel}>` : 'Not set', inline: true }
+        )
+        .setColor(0x00ff00)
+        .setTimestamp();
+      await interaction.reply({ embeds: [enableEmbed], ephemeral: true });
 
     } else if (sub === 'disable') {
       conf.enabled = false;
       saveSettings(settings);
-      await interaction.reply({ content: '❌ The welcome system is now disabled.', ephemeral: true });
+      const disableEmbed = new EmbedBuilder()
+        .setTitle('❌ Welcome System Disabled')
+        .setDescription('The welcome system is now inactive and will not send welcome messages.')
+        .addFields(
+          { name: '🎯 Status', value: '❌ Disabled', inline: true },
+          { name: '📝 Channel', value: conf.channel ? `<#${conf.channel}>` : 'Not set', inline: true }
+        )
+        .setColor(0xff0000)
+        .setTimestamp();
+      await interaction.reply({ embeds: [disableEmbed], ephemeral: true });
 
     } else if (sub === 'setchannel') {
       const channel = interaction.options.getChannel('channel');
       if (!channel) {
-        await interaction.reply({ content: '❌ Channel not found.', ephemeral: true });
+        const channelNotFoundEmbed = new EmbedBuilder()
+          .setTitle('❌ Channel Not Found')
+          .setDescription('The specified channel was not found.')
+          .setColor(0xff0000)
+          .setTimestamp();
+        await interaction.reply({ embeds: [channelNotFoundEmbed], ephemeral: true });
         return;
       }
       conf.channel = channel.id;
       saveSettings(settings);
-      await interaction.reply({ content: `✅ The welcome channel is now <#${channel.id}>.`, ephemeral: true });
+      const setChannelEmbed = new EmbedBuilder()
+        .setTitle('✅ Welcome Channel Set')
+        .setDescription(`The welcome channel has been successfully configured.`)
+        .addFields(
+          { name: '📝 Channel', value: `<#${channel.id}>`, inline: true },
+          { name: '🎯 Status', value: conf.enabled ? '✅ Enabled' : '❌ Disabled', inline: true }
+        )
+        .setColor(0x00ff00)
+        .setTimestamp();
+      await interaction.reply({ embeds: [setChannelEmbed], ephemeral: true });
 
     } else if (sub === 'test') {
-      if (!conf.enabled || !conf.channel) return interaction.reply({ content: '⚠️ The welcome system is disabled or no channel has been set.', ephemeral: true });
+      if (!conf.enabled || !conf.channel) {
+        const testErrorEmbed = new EmbedBuilder()
+          .setTitle('⚠️ Welcome System Not Ready')
+          .setDescription('The welcome system is disabled or no channel has been set.')
+          .addFields(
+            { name: '🎯 Status', value: conf.enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: '📝 Channel', value: conf.channel ? `<#${conf.channel}>` : 'Not set', inline: true }
+          )
+          .setColor(0xffa500)
+          .setTimestamp();
+        return interaction.reply({ embeds: [testErrorEmbed], ephemeral: true });
+      }
 
       const member = interaction.member;
       const channel = interaction.guild.channels.cache.get(conf.channel);
@@ -102,7 +145,16 @@ module.exports = {
           }]
         });
       }
-      await interaction.reply({ content: '✅ Test welcome message sent.', ephemeral: true });
+      const testSuccessEmbed = new EmbedBuilder()
+        .setTitle('✅ Test Message Sent')
+        .setDescription('A test welcome message has been sent to the configured channel.')
+        .addFields(
+          { name: '📝 Channel', value: `<#${conf.channel}>`, inline: true },
+          { name: '👤 Test User', value: `${member.user.tag}`, inline: true }
+        )
+        .setColor(0x00ff00)
+        .setTimestamp();
+      await interaction.reply({ embeds: [testSuccessEmbed], ephemeral: true });
     }
   }
 };

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 const settingsPath = path.join(__dirname, '..', 'settings.json');
@@ -45,23 +45,58 @@ module.exports = {
         roleId: role.id
       };
       saveSettings(settings);
-      await interaction.reply(`✅ The role ${role.name} will now be automatically assigned to new members.`, { ephemeral: true });
+      const setRoleEmbed = new EmbedBuilder()
+        .setTitle('✅ Autorole Set')
+        .setDescription(`The role **${role.name}** will now be automatically assigned to new members.`)
+        .addFields(
+          { name: '🎭 Role', value: `${role.name} (<@&${role.id}>)`, inline: true },
+          { name: '🎯 Status', value: '✅ Enabled', inline: true },
+          { name: '🛡️ Moderator', value: `${interaction.user.tag}`, inline: true }
+        )
+        .setColor(0x00ff00)
+        .setTimestamp();
+      await interaction.reply({ embeds: [setRoleEmbed], ephemeral: true });
     }
 
     else if (sub === 'disable') {
       settings[guildId].autorole = { enabled: false, roleId: null };
       saveSettings(settings);
-      await interaction.reply('❌ Autorole is now disabled.', { ephemeral: true });
+      const disableEmbed = new EmbedBuilder()
+        .setTitle('❌ Autorole Disabled')
+        .setDescription('Autorole is now disabled. New members will not receive automatic roles.')
+        .addFields(
+          { name: '🎯 Status', value: '❌ Disabled', inline: true },
+          { name: '🛡️ Moderator', value: `${interaction.user.tag}`, inline: true }
+        )
+        .setColor(0xff0000)
+        .setTimestamp();
+      await interaction.reply({ embeds: [disableEmbed], ephemeral: true });
     }
 
     else if (sub === 'status') {
       const data = settings[guildId].autorole;
+      const statusEmbed = new EmbedBuilder()
+        .setTitle('📊 Autorole Status')
+        .setColor(data.enabled ? 0x00ff00 : 0xff0000)
+        .setTimestamp();
+      
       if (data.enabled) {
         const role = interaction.guild.roles.cache.get(data.roleId);
-        await interaction.reply(`📌 Autorole is enabled: **${role?.name || 'Role not found'}**.`,   { ephemeral: true });
+        statusEmbed
+          .setDescription('Autorole is currently enabled and active.')
+          .addFields(
+            { name: '🎯 Status', value: '✅ Enabled', inline: true },
+            { name: '🎭 Role', value: role ? `${role.name} (<@&${role.id}>)` : 'Role not found', inline: true }
+          );
       } else {
-        await interaction.reply('🚫 Autorole is currently disabled.',  { ephemeral: true});
+        statusEmbed
+          .setDescription('Autorole is currently disabled.')
+          .addFields(
+            { name: '🎯 Status', value: '❌ Disabled', inline: true }
+          );
       }
+      
+      await interaction.reply({ embeds: [statusEmbed], ephemeral: true });
     }
   }
 };
