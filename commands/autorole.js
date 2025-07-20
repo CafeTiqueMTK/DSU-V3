@@ -1,11 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-const settingsPath = path.join(__dirname, '..', 'settings.json');
-
-function saveSettings(settings) {
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
-}
+const { getGuildData, saveGuildData } = require('../utils/guildManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -30,13 +24,8 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
 
-    let settings = {};
-    if (fs.existsSync(settingsPath)) {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    }
-
-    if (!settings[guildId]) settings[guildId] = {};
-    if (!settings[guildId].autorole) settings[guildId].autorole = { enabled: false, roleId: null };
+    // Utiliser le gestionnaire de guild pour obtenir les données
+    const settings = getGuildData(guildId, 'settings');
 
     if (sub === 'set') {
       const role = interaction.options.getRole('role');
@@ -44,7 +33,7 @@ module.exports = {
         enabled: true,
         roleId: role.id
       };
-      saveSettings(settings);
+      saveGuildData(guildId, settings, 'settings');
       const setRoleEmbed = new EmbedBuilder()
         .setTitle('✅ Autorole Set')
         .setDescription(`The role **${role.name}** will now be automatically assigned to new members.`)
@@ -60,7 +49,7 @@ module.exports = {
 
     else if (sub === 'disable') {
       settings[guildId].autorole = { enabled: false, roleId: null };
-      saveSettings(settings);
+      saveGuildData(guildId, settings, 'settings');
       const disableEmbed = new EmbedBuilder()
         .setTitle('❌ Autorole Disabled')
         .setDescription('Autorole is now disabled. New members will not receive automatic roles.')

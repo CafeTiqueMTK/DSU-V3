@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
+const { getGuildData, saveGuildData } = require('../utils/guildManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,18 +15,9 @@ module.exports = {
   async execute(interaction) {
     const user = interaction.options.getUser('user');
     const guildId = interaction.guild.id;
-    const warnsPath = path.join(__dirname, '../warns.json');
 
-    if (!fs.existsSync(warnsPath)) {
-      const noWarningsEmbed = new EmbedBuilder()
-        .setTitle('❌ No Warnings Found')
-        .setDescription('No warnings database found.')
-        .setColor(0xff0000)
-        .setTimestamp();
-      return interaction.reply({ embeds: [noWarningsEmbed], ephemeral: true });
-    }
-
-    let warns = JSON.parse(fs.readFileSync(warnsPath, 'utf-8'));
+    // Utiliser le gestionnaire de guild pour obtenir les données
+    const warns = getGuildData(guildId, 'warns');
 
     if (!warns[guildId] || !warns[guildId][user.id]) {
       const noUserWarningsEmbed = new EmbedBuilder()
@@ -45,7 +35,7 @@ module.exports = {
     const warningCount = warns[guildId][user.id].length;
     delete warns[guildId][user.id];
 
-    fs.writeFileSync(warnsPath, JSON.stringify(warns, null, 2));
+    saveGuildData(guildId, warns, 'warns');
 
     const clearSuccessEmbed = new EmbedBuilder()
       .setTitle('🧹 Warnings Cleared')
