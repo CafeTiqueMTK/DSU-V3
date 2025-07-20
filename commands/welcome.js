@@ -32,6 +32,15 @@ module.exports = {
 
     // Utiliser le gestionnaire de guild pour obtenir les données
     const settings = getGuildData(guildId, 'settings');
+    
+    // Initialiser la structure welcome si elle n'existe pas
+    if (!settings[guildId].welcome) {
+      settings[guildId].welcome = {
+        enabled: false,
+        channel: null
+      };
+    }
+    
     const conf = settings[guildId].welcome;
     const sub = interaction.options.getSubcommand();
 

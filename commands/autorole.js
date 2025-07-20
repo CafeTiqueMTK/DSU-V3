@@ -26,6 +26,14 @@ module.exports = {
 
     // Utiliser le gestionnaire de guild pour obtenir les données
     const settings = getGuildData(guildId, 'settings');
+    
+    // Initialiser la structure autorole si elle n'existe pas
+    if (!settings[guildId].autorole) {
+      settings[guildId].autorole = {
+        enabled: false,
+        roleId: null
+      };
+    }
 
     if (sub === 'set') {
       const role = interaction.options.getRole('role');
@@ -44,7 +52,7 @@ module.exports = {
         )
         .setColor(0x00ff00)
         .setTimestamp();
-      await interaction.reply({ embeds: [setRoleEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [setRoleEmbed], flags: 64 });
     }
 
     else if (sub === 'disable') {
@@ -59,7 +67,7 @@ module.exports = {
         )
         .setColor(0xff0000)
         .setTimestamp();
-      await interaction.reply({ embeds: [disableEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [disableEmbed], flags: 64 });
     }
 
     else if (sub === 'status') {
@@ -85,7 +93,7 @@ module.exports = {
           );
       }
       
-      await interaction.reply({ embeds: [statusEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [statusEmbed], flags: 64 });
     }
   }
 };

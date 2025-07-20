@@ -29,7 +29,7 @@ module.exports = {
         )
         .setColor(0xff0000)
         .setTimestamp();
-      return interaction.reply({ embeds: [noUserWarningsEmbed], ephemeral: true });
+      return interaction.reply({ embeds: [noUserWarningsEmbed], flags: 64 });
     }
 
     const warningCount = warns[guildId][user.id].length;
@@ -47,6 +47,6 @@ module.exports = {
       )
       .setColor(0x00ff00)
       .setTimestamp();
-    return interaction.reply({ embeds: [clearSuccessEmbed], ephemeral: true });
+    return interaction.reply({ embeds: [clearSuccessEmbed], flags: 64 });
   }
 };
