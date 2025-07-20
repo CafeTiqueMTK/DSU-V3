@@ -1,5 +1,11 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
+const path = require('path');
+const settingsPath = path.join(__dirname, '..', 'settings.json');
+
+function saveSettings(settings) {
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+}
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -28,8 +34,13 @@ module.exports = {
         .setDescription('Send a test welcome message')),
 
   async execute(interaction) {
-    const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
     const guildId = interaction.guild.id;
+
+    let settings = {};
+    if (fs.existsSync(settingsPath)) {
+      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    }
+
     if (!settings[guildId]) settings[guildId] = {};
     if (!settings[guildId].welcome) {
       settings[guildId].welcome = {
@@ -56,12 +67,12 @@ module.exports = {
 
     } else if (sub === 'enable') {
       conf.enabled = true;
-      fs.writeFileSync('./settings.json', JSON.stringify(settings, null, 2));
+      saveSettings(settings);
       await interaction.reply({ content: '✅ The welcome system is now enabled.', ephemeral: true });
 
     } else if (sub === 'disable') {
       conf.enabled = false;
-      fs.writeFileSync('./settings.json', JSON.stringify(settings, null, 2));
+      saveSettings(settings);
       await interaction.reply({ content: '❌ The welcome system is now disabled.', ephemeral: true });
 
     } else if (sub === 'setchannel') {
@@ -71,7 +82,7 @@ module.exports = {
         return;
       }
       conf.channel = channel.id;
-      fs.writeFileSync('./settings.json', JSON.stringify(settings, null, 2));
+      saveSettings(settings);
       await interaction.reply({ content: `✅ The welcome channel is now <#${channel.id}>.`, ephemeral: true });
 
     } else if (sub === 'test') {

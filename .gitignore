@@ -16,6 +16,9 @@ data/
 *.json
 !package.json
 !package-lock.json
+!settings.json
+!warns.json
+!presets.json
 
 # Logs
 logs
