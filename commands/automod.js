@@ -74,7 +74,7 @@ module.exports = {
     if (!interaction.guild) {
       return interaction.reply({ 
         content: '❌ This command can only be used in a server.', 
-        ephemeral: true 
+        flags: 64 
       });
     }
 
@@ -118,7 +118,7 @@ module.exports = {
           .setColor(0x00ff99)
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
 
       } else if (sub === 'disable') {
         settings[guildId].automod.enabled = false;
@@ -130,7 +130,7 @@ module.exports = {
           .setColor(0xff5555)
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
 
       } else if (sub === 'actionchannel') {
         const channel = interaction.options.getChannel('channel');
@@ -138,7 +138,7 @@ module.exports = {
         if (channel.type !== ChannelType.GuildText) {
           return interaction.reply({ 
             content: '❌ Please select a text channel for Automod actions.', 
-            ephemeral: true 
+            flags: 64 
           });
         }
 
@@ -146,7 +146,7 @@ module.exports = {
         if (!permissions.has('SendMessages') || !permissions.has('ViewChannel')) {
           return interaction.reply({ 
             content: '❌ I need permission to send messages and view the selected channel.', 
-            ephemeral: true 
+            flags: 64 
           });
         }
 
@@ -163,7 +163,7 @@ module.exports = {
           .setColor(0x00ff99)
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
 
       } else if (sub === 'status') {
         const automod = settings[guildId].automod;
@@ -199,7 +199,7 @@ module.exports = {
           .setFooter({ text: 'DSU Automod & Anti Protection System' })
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
 
       } else if (sub === 'addkeywords') {
         const keyword = interaction.options.getString('keyword').toLowerCase();
@@ -210,7 +210,7 @@ module.exports = {
             .setDescription(`The keyword "${keyword}" is already in the blacklist.`)
             .setColor(0xffa500)
             .setTimestamp();
-          return interaction.reply({ embeds: [alreadyExistsEmbed], ephemeral: true });
+          return interaction.reply({ embeds: [alreadyExistsEmbed], flags: 64 });
         }
 
         settings[guildId].antiKeywords.keywords.push(keyword);
@@ -227,7 +227,7 @@ module.exports = {
           .setColor(0x00ff99)
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
 
       } else if (sub === 'remkeywords') {
         const keyword = interaction.options.getString('keyword').toLowerCase();
@@ -238,7 +238,7 @@ module.exports = {
             .setDescription(`The keyword "${keyword}" is not in the blacklist.`)
             .setColor(0xffa500)
             .setTimestamp();
-          return interaction.reply({ embeds: [notFoundEmbed], ephemeral: true });
+          return interaction.reply({ embeds: [notFoundEmbed], flags: 64 });
         }
 
         settings[guildId].antiKeywords.keywords = settings[guildId].antiKeywords.keywords.filter(k => k !== keyword);
@@ -255,7 +255,7 @@ module.exports = {
           .setColor(0x00ff99)
           .setTimestamp();
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
 
       } else if (sub === 'listkeywords') {
         const keywords = settings[guildId].antiKeywords.keywords;
@@ -286,7 +286,7 @@ module.exports = {
           });
         }
 
-        await interaction.reply({ embeds: [embed], ephemeral: true });
+        await interaction.reply({ embeds: [embed], flags: 64 });
 
       } else if (sub === 'pingrole') {
         const action = interaction.options.getString('action');
@@ -299,7 +299,7 @@ module.exports = {
               .setDescription('Please specify a role to add to the blocked list.')
               .setColor(0xff0000)
               .setTimestamp();
-            return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            return interaction.reply({ embeds: [errorEmbed], flags: 64 });
           }
 
           // Check if role is already blocked
@@ -309,7 +309,7 @@ module.exports = {
               .setDescription(`The role ${role} is already in the blocked list.`)
               .setColor(0xffa500)
               .setTimestamp();
-            return interaction.reply({ embeds: [alreadyBlockedEmbed], ephemeral: true });
+            return interaction.reply({ embeds: [alreadyBlockedEmbed], flags: 64 });
           }
 
           // Add role to blocked list
@@ -327,7 +327,7 @@ module.exports = {
             .setColor(0x00ff00)
             .setTimestamp();
 
-          await interaction.reply({ embeds: [addSuccessEmbed], ephemeral: true });
+          await interaction.reply({ embeds: [addSuccessEmbed], flags: 64 });
 
         } else if (action === 'del') {
           if (!role) {
@@ -336,7 +336,7 @@ module.exports = {
               .setDescription('Please specify a role to remove from the blocked list.')
               .setColor(0xff0000)
               .setTimestamp();
-            return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+            return interaction.reply({ embeds: [errorEmbed], flags: 64 });
           }
 
           // Check if role is in blocked list
@@ -347,7 +347,7 @@ module.exports = {
               .setDescription(`The role ${role} is not in the blocked list.`)
               .setColor(0xffa500)
               .setTimestamp();
-            return interaction.reply({ embeds: [notBlockedEmbed], ephemeral: true });
+            return interaction.reply({ embeds: [notBlockedEmbed], flags: 64 });
           }
 
           // Remove role from blocked list
@@ -365,7 +365,7 @@ module.exports = {
             .setColor(0x00ff00)
             .setTimestamp();
 
-          await interaction.reply({ embeds: [removeSuccessEmbed], ephemeral: true });
+          await interaction.reply({ embeds: [removeSuccessEmbed], flags: 64 });
 
         } else if (action === 'list') {
           const blockedRoles = settings[guildId].automod.blockedRoles;
@@ -381,7 +381,7 @@ module.exports = {
               .setColor(0x808080)
               .setTimestamp();
 
-            await interaction.reply({ embeds: [emptyListEmbed], ephemeral: true });
+            await interaction.reply({ embeds: [emptyListEmbed], flags: 64 });
           } else {
             const roleList = blockedRoles.map(roleId => {
               const role = interaction.guild.roles.cache.get(roleId);
@@ -399,7 +399,7 @@ module.exports = {
               .setColor(0x00ff00)
               .setTimestamp();
 
-            await interaction.reply({ embeds: [listEmbed], ephemeral: true });
+            await interaction.reply({ embeds: [listEmbed], flags: 64 });
           }
         }
       }
@@ -408,7 +408,7 @@ module.exports = {
       console.error('Error in automod command:', error);
       await interaction.reply({ 
         content: '❌ An error occurred while configuring Automod.', 
-        ephemeral: true 
+        flags: 64 
       });
     }
   }
