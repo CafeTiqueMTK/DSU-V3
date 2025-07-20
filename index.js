@@ -469,10 +469,10 @@ client.on(Events.InteractionCreate, async interaction => {
     });
 
     const welcomeMessage = ticketsConfig[guildId].welcomeMessage || "Welcome to your ticket! A support member will assist you soon.";
-    // Send embed with close button
+    // Send embed with close button (no role mention)
     const ticketEmbed = new EmbedBuilder()
       .setTitle('🎫 Support Ticket')
-      .setDescription(`<@${userId}> <@&${ticketsConfig[guildId].supportRole}>\n${welcomeMessage}`)
+      .setDescription(welcomeMessage)
       .setColor(0x00ff99)
       .setTimestamp();
     const closeButton = new ActionRowBuilder().addComponents(
