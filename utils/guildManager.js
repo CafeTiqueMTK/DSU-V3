@@ -90,7 +90,13 @@ function initializeGuildData(guildId, dataType = 'all') {
         },
         warnActions: {},
         antiBot: { enabled: false },
-        antiRaid: { enabled: false, threshold: 5, recentJoins: [] }
+        antiRaid: { enabled: false, threshold: 5, recentJoins: [] },
+        antiMassMention: { enabled: false },
+        antiSpam: { enabled: false },
+        antiInvites: { enabled: false },
+        antiLinks: { enabled: false },
+        antiKeywords: { enabled: false, keywords: [] },
+        antiRoles: { enabled: false }
       };
       saveData(settingsPath, settings);
     }
@@ -115,12 +121,111 @@ function initializeGuildData(guildId, dataType = 'all') {
   }
 }
 
+// Fonction pour migrer les données d'une guild existante
+function migrateGuildData(guildId) {
+  const guildIdStr = guildId.toString();
+  const settings = loadData(settingsPath);
+  
+  if (settings[guildIdStr]) {
+    const guildSettings = settings[guildIdStr];
+    
+    // Ajouter les structures manquantes
+    if (!guildSettings.welcome) {
+      guildSettings.welcome = { enabled: false, channel: null };
+    }
+    if (!guildSettings.autorole) {
+      guildSettings.autorole = { enabled: false, roleId: null };
+    }
+    if (!guildSettings.automod) {
+      guildSettings.automod = {
+        enabled: false,
+        actionChannel: null,
+        categories: {
+          badWords: { enabled: false },
+          discordLink: { enabled: false },
+          ghostPing: { enabled: false },
+          spam: { enabled: false }
+        },
+        blockedRoles: []
+      };
+    }
+    if (!guildSettings.logs) {
+      guildSettings.logs = {
+        enabled: false,
+        channel: null,
+        categories: {
+          arrived: false,
+          farewell: false,
+          vocal: false,
+          mod: false,
+          automod: false,
+          commands: false,
+          roles: false,
+          soundboard: false,
+          tickets: false,
+          channels: false,
+          economy: false,
+          bulkdelete: false,
+          messages: false,
+          invites: false
+        }
+      };
+    }
+    if (!guildSettings.level) {
+      guildSettings.level = {
+        enabled: false,
+        channel: null,
+        boosters: {},
+        users: {},
+        message: true
+      };
+    }
+    if (!guildSettings.farewell) {
+      guildSettings.farewell = { enabled: false, channel: null };
+    }
+    if (!guildSettings.warnActions) {
+      guildSettings.warnActions = {};
+    }
+    if (!guildSettings.antiBot) {
+      guildSettings.antiBot = { enabled: false };
+    }
+    if (!guildSettings.antiRaid) {
+      guildSettings.antiRaid = { enabled: false, threshold: 5, recentJoins: [] };
+    }
+    if (!guildSettings.antiMassMention) {
+      guildSettings.antiMassMention = { enabled: false };
+    }
+    if (!guildSettings.antiSpam) {
+      guildSettings.antiSpam = { enabled: false };
+    }
+    if (!guildSettings.antiInvites) {
+      guildSettings.antiInvites = { enabled: false };
+    }
+    if (!guildSettings.antiLinks) {
+      guildSettings.antiLinks = { enabled: false };
+    }
+    if (!guildSettings.antiKeywords) {
+      guildSettings.antiKeywords = { enabled: false, keywords: [] };
+    }
+    if (!guildSettings.antiRoles) {
+      guildSettings.antiRoles = { enabled: false };
+    }
+    
+    saveData(settingsPath, settings);
+  }
+}
+
 // Fonction pour obtenir les données d'une guild
 function getGuildData(guildId, dataType = 'settings') {
   const guildIdStr = guildId.toString();
   
   // Initialiser les données si elles n'existent pas
   initializeGuildData(guildId, dataType);
+  
+  // Migrer les données pour les guilds existantes
+  if (dataType === 'settings') {
+    migrateGuildData(guildId);
+  }
   
   switch (dataType) {
     case 'settings':
@@ -186,6 +291,7 @@ function saveUserData(userId, data, dataType = 'coins') {
 
 module.exports = {
   initializeGuildData,
+  migrateGuildData,
   getGuildData,
   getUserData,
   saveGuildData,
