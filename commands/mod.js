@@ -97,7 +97,12 @@ module.exports = {
     }
     
     if (!hasPermission) {
-      await interaction.reply({ content: 'Permission denied. Only administrators and moderators can use this command.', ephemeral: true });
+      const permissionEmbed = new EmbedBuilder()
+        .setTitle('❌ Permission Denied')
+        .setDescription('Only administrators and moderators can use this command.')
+        .setColor(0xff0000)
+        .setTimestamp();
+      await interaction.reply({ embeds: [permissionEmbed], ephemeral: true });
       return;
     }
 
@@ -111,14 +116,24 @@ module.exports = {
     const member = await interaction.guild.members.fetch(user.id).catch(() => null);
 
     if (!member) {
-      await interaction.reply({ content: 'User not found on this server.', ephemeral: true });
+      const userNotFoundEmbed = new EmbedBuilder()
+        .setTitle('❌ User Not Found')
+        .setDescription('The specified user was not found on this server.')
+        .setColor(0xff0000)
+        .setTimestamp();
+      await interaction.reply({ embeds: [userNotFoundEmbed], ephemeral: true });
       return;
     }
 
     if (sub === 'ban') {
       // Check if user has ban permission or is admin
       if (!interaction.member.permissions.has(PermissionFlagsBits.BanMembers) && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
-        await interaction.reply({ content: 'Permission denied to ban.', ephemeral: true });
+        const banPermissionEmbed = new EmbedBuilder()
+          .setTitle('❌ Permission Denied')
+          .setDescription('You do not have permission to ban users.')
+          .setColor(0xff0000)
+          .setTimestamp();
+        await interaction.reply({ embeds: [banPermissionEmbed], ephemeral: true });
         return;
       }
       // DM the user with embed
@@ -131,7 +146,17 @@ module.exports = {
         await user.send({ embeds: [embed] });
       } catch {}
       await member.ban({ reason }).catch(() => {});
-      await interaction.reply({ content: `🔨 ${user.tag} banned. Reason: ${reason}`, ephemeral: true });
+      const banSuccessEmbed = new EmbedBuilder()
+        .setTitle('🔨 User Banned')
+        .setDescription(`**${user.tag}** has been banned from the server.`)
+        .addFields(
+          { name: '👤 User', value: `${user.tag} (${user.id})`, inline: true },
+          { name: '🛡️ Moderator', value: `${interaction.user.tag}`, inline: true },
+          { name: '📝 Reason', value: reason, inline: false }
+        )
+        .setColor(0x8B0000)
+        .setTimestamp();
+      await interaction.reply({ embeds: [banSuccessEmbed], ephemeral: true });
 
       // Moderation logging
       try {
@@ -167,7 +192,17 @@ module.exports = {
         await user.send({ embeds: [embed] });
       } catch {}
       await member.kick(reason).catch(() => {});
-      await interaction.reply({ content: `👢 ${user.tag} kicked. Reason: ${reason}`, ephemeral: true });
+      const kickSuccessEmbed = new EmbedBuilder()
+        .setTitle('👢 User Kicked')
+        .setDescription(`**${user.tag}** has been kicked from the server.`)
+        .addFields(
+          { name: '👤 User', value: `${user.tag} (${user.id})`, inline: true },
+          { name: '🛡️ Moderator', value: `${interaction.user.tag}`, inline: true },
+          { name: '📝 Reason', value: reason, inline: false }
+        )
+        .setColor(0xffa500)
+        .setTimestamp();
+      await interaction.reply({ embeds: [kickSuccessEmbed], ephemeral: true });
 
       // Moderation logging
       try {
@@ -292,10 +327,18 @@ module.exports = {
         await user.send({ embeds: [embed] });
       } catch {}
 
-      await interaction.reply({ 
-        content: `⚠️ ${user.tag} warned. Reason: ${reason}${actionMessage}`, 
-        ephemeral: true 
-      });
+      const warnSuccessEmbed = new EmbedBuilder()
+        .setTitle('⚠️ User Warned')
+        .setDescription(`**${user.tag}** has been warned.${actionMessage}`)
+        .addFields(
+          { name: '👤 User', value: `${user.tag} (${user.id})`, inline: true },
+          { name: '🛡️ Moderator', value: `${interaction.user.tag}`, inline: true },
+          { name: '📝 Reason', value: reason, inline: false },
+          { name: '📊 Warning Count', value: `${currentWarnCount}`, inline: true }
+        )
+        .setColor(actionExecuted ? 0xff0000 : 0xffc300)
+        .setTimestamp();
+      await interaction.reply({ embeds: [warnSuccessEmbed], ephemeral: true });
 
       // Moderation logging
       try {
@@ -335,11 +378,31 @@ module.exports = {
       // Use the existing "mute" role
       const muteRole = interaction.guild.roles.cache.find(r => r.name.toLowerCase() === 'mute');
       if (!muteRole) {
-        await interaction.reply({ content: 'No "mute" role found.', ephemeral: true });
+        const noMuteRoleEmbed = new EmbedBuilder()
+          .setTitle('❌ Mute Role Not Found')
+          .setDescription('No "mute" role was found on this server. Please create a role named "mute" to use this command.')
+          .setColor(0xff0000)
+          .setTimestamp();
+        await interaction.reply({ embeds: [noMuteRoleEmbed], ephemeral: true });
         return;
       }
       await member.roles.add(muteRole, reason).catch(() => {});
-      await interaction.reply({ content: `🔇 ${user.tag} muted. Reason: ${reason}` + (duration ? ` (Duration: ${duration} min)` : ''), ephemeral: true });
+      const muteSuccessEmbed = new EmbedBuilder()
+        .setTitle('🔇 User Muted')
+        .setDescription(`**${user.tag}** has been muted.`)
+        .addFields(
+          { name: '👤 User', value: `${user.tag} (${user.id})`, inline: true },
+          { name: '🛡️ Moderator', value: `${interaction.user.tag}`, inline: true },
+          { name: '📝 Reason', value: reason, inline: false }
+        )
+        .setColor(0x808080)
+        .setTimestamp();
+      
+      if (duration && duration > 0) {
+        muteSuccessEmbed.addFields({ name: '⏰ Duration', value: `${duration} minute(s)`, inline: true });
+      }
+      
+      await interaction.reply({ embeds: [muteSuccessEmbed], ephemeral: true });
 
       // Moderation logging
       try {
