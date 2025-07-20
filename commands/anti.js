@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
-const fs = require('fs');
-const settingsPath = './settings.json';
+const { getGuildData, saveGuildData } = require('../utils/guildManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -71,6 +70,19 @@ module.exports = {
             )
             .setRequired(true)
         )
+    )
+    .addSubcommand(sub =>
+      sub.setName('roles')
+        .setDescription('Configure anti role mention protection')
+        .addStringOption(opt =>
+          opt.setName('action')
+            .setDescription('Enable or disable anti role mention')
+            .addChoices(
+              { name: 'Enable', value: 'enable' },
+              { name: 'Disable', value: 'disable' }
+            )
+            .setRequired(true)
+        )
     ),
 
   async execute(interaction) {
@@ -81,13 +93,8 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
 
-    // Load settings
-    let settings = {};
-    if (fs.existsSync(settingsPath)) {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    }
-
-    if (!settings[guildId]) settings[guildId] = {};
+    // Utiliser le gestionnaire de guild pour obtenir les données
+    const settings = getGuildData(guildId, 'settings');
 
     // Initialize anti protection settings
     if (!settings[guildId].antiMassMention) {
@@ -105,6 +112,9 @@ module.exports = {
     if (!settings[guildId].antiKeywords) {
       settings[guildId].antiKeywords = { enabled: false, keywords: [] };
     }
+    if (!settings[guildId].antiRoles) {
+      settings[guildId].antiRoles = { enabled: false };
+    }
 
     try {
       if (sub === 'massmention') {
@@ -112,7 +122,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].antiMassMention.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Anti Mass Mention Enabled' : '❌ Anti Mass Mention Disabled')
@@ -132,7 +142,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].antiSpam.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Anti Spam Enabled' : '❌ Anti Spam Disabled')
@@ -152,7 +162,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].antiInvites.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Anti Invites Enabled' : '❌ Anti Invites Disabled')
@@ -172,7 +182,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].antiLinks.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Anti Links Enabled' : '❌ Anti Links Disabled')
@@ -192,7 +202,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].antiKeywords.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Anti Keywords Enabled' : '❌ Anti Keywords Disabled')
@@ -201,6 +211,26 @@ module.exports = {
             { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
             { name: 'Action', value: 'Message deletion + DM warning', inline: true },
             { name: 'Keywords', value: `${settings[guildId].antiKeywords.keywords.length} blacklisted`, inline: true }
+          )
+          .setColor(enabled ? 0x00ff99 : 0xff5555)
+          .setTimestamp();
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+
+      } else if (sub === 'roles') {
+        const action = interaction.options.getString('action');
+        const enabled = action === 'enable';
+        
+        settings[guildId].antiRoles.enabled = enabled;
+        saveGuildData(guildId, settings, 'settings');
+
+        const embed = new EmbedBuilder()
+          .setTitle(enabled ? '✅ Anti Role Mention Enabled' : '❌ Anti Role Mention Disabled')
+          .setDescription(`Anti role mention protection is now ${enabled ? 'active' : 'inactive'}.`)
+          .addFields(
+            { name: 'Status', value: enabled ? '✅ Enabled' : '❌ Disabled', inline: true },
+            { name: 'Action', value: 'Message deletion + DM warning', inline: true },
+            { name: 'Detection', value: 'Blocked role mentions', inline: true }
           )
           .setColor(enabled ? 0x00ff99 : 0xff5555)
           .setTimestamp();

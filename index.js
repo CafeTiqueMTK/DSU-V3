@@ -2254,6 +2254,75 @@ client.on('guildMemberAdd', async (member) => {
   }
 });
 
+// Anti role mention protection
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages and DMs
+  if (message.author?.bot || !message.guild) return;
+
+  try {
+    const { getGuildData } = require('./utils/guildManager');
+    const settings = getGuildData(message.guild.id, 'settings');
+    
+    // Check if anti-role protection is enabled
+    if (!settings[message.guild.id]?.antiRoles?.enabled) return;
+    
+    // Check if automod blocked roles are configured
+    const blockedRoles = settings[message.guild.id]?.automod?.blockedRoles || [];
+    if (blockedRoles.length === 0) return;
+
+    // Check if message contains any blocked role mentions
+    const mentionedRoles = message.mentions.roles;
+    const blockedMentions = mentionedRoles.filter(role => blockedRoles.includes(role.id));
+
+    if (blockedMentions.size > 0) {
+      // Delete the message
+      await message.delete().catch(console.error);
+
+      // Send warning to user
+      const warningEmbed = new EmbedBuilder()
+        .setTitle('⚠️ Role Mention Blocked')
+        .setDescription('You are not allowed to mention certain roles in this server.')
+        .addFields(
+          { name: 'Blocked Roles', value: blockedMentions.map(role => `${role}`).join(', '), inline: false },
+          { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+          { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: true }
+        )
+        .setColor(0xff0000)
+        .setTimestamp();
+
+      try {
+        await message.author.send({ embeds: [warningEmbed] });
+      } catch (dmError) {
+        // If DM fails, log it
+        console.log(`Could not send DM to ${message.author.tag}: ${dmError.message}`);
+      }
+
+      // Log the action
+      const logChannel = getLogChannel(message.guild, "automod");
+      if (logChannel) {
+        const logEmbed = new EmbedBuilder()
+          .setTitle('🚫 Role Mention Blocked')
+          .addFields(
+            { name: 'User', value: `${message.author.tag} (<@${message.author.id}>)`, inline: true },
+            { name: 'Blocked Roles', value: blockedMentions.map(role => `${role}`).join(', '), inline: true },
+            { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+            { name: 'Action', value: 'Message deleted + DM warning', inline: true },
+            { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
+          )
+          .setThumbnail(message.author.displayAvatarURL({ dynamic: true }))
+          .setColor(0xff0000)
+          .setFooter({ text: 'DSU Anti-Role Protection' })
+          .setTimestamp(new Date());
+        await logChannel.send({ embeds: [logEmbed] });
+      }
+
+      console.log(`Blocked role mention from ${message.author.tag} in ${message.guild.name}`);
+    }
+  } catch (error) {
+    console.error('Error in anti-role mention protection:', error);
+  }
+});
+
 // Initialize and start the update checker
 const UpdateChecker = require('./update-checker.js');
 const updateChecker = new UpdateChecker(client);
