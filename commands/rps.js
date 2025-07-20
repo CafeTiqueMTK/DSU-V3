@@ -45,27 +45,12 @@ module.exports = {
       if (!coinsData[challenger.id]) coinsData[challenger.id] = { coins: 0 };
       if (!coinsData[opponent.id]) coinsData[opponent.id] = { coins: 0 };
 
-      // Check if both players have enough coins (100 each)
-      if (coinsData[challenger.id].coins < 100) {
-        await interaction.reply({
-          content: '❌ You need at least 100 coins to play!',
-          ephemeral: true
-        });
-        return;
-      }
-
-      if (coinsData[opponent.id].coins < 100) {
-        await interaction.reply({
-          content: `❌ ${opponent.tag} needs at least 100 coins to play!`,
-          ephemeral: true
-        });
-        return;
-      }
+      // No coin requirement to play - only winner gets coins
 
       // Create challenge embed
       const challengeEmbed = new EmbedBuilder()
         .setTitle('🎮 Rock, Paper, Scissors Challenge!')
-        .setDescription(`${challenger} challenges ${opponent} to a game of Rock, Paper, Scissors!\n\n**Stake:** 100 coins each\n**Winner takes:** 200 coins total`)
+        .setDescription(`${challenger} challenges ${opponent} to a game of Rock, Paper, Scissors!\n\n**Prize:** 100 coins for the winner\n**No entry fee required!**`)
         .addFields(
           { name: '💰 Current Coins', value: `${challenger}: **${coinsData[challenger.id].coins}** coins\n${opponent}: **${coinsData[opponent.id].coins}** coins`, inline: true },
           { name: '⏰ Time Limit', value: '60 seconds to accept', inline: true }
@@ -92,13 +77,13 @@ module.exports = {
     const infoButtons = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
-          .setCustomId('rps_stake_info')
-          .setLabel('💰 Stake: 100 coins each')
+          .setCustomId('rps_prize_info')
+          .setLabel('🏆 Prize: 100 coins')
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
         new ButtonBuilder()
-          .setCustomId('rps_pot_info')
-          .setLabel('🏆 Winner takes: 200 coins')
+          .setCustomId('rps_free_info')
+          .setLabel('🎮 Free to play!')
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
         new ButtonBuilder()
@@ -174,17 +159,14 @@ module.exports = {
 
 async function startGame(interaction, challenger, opponent, coinsData, coinsPath) {
   try {
-    // Deduct coins from both players
-    coinsData[challenger.id].coins -= 100;
-    coinsData[opponent.id].coins -= 100;
-    fs.writeFileSync(coinsPath, JSON.stringify(coinsData, null, 2));
+    // No coins deducted - winner will get 100 coins
 
     // Create game embed
     const gameEmbed = new EmbedBuilder()
       .setTitle('🎮 Rock, Paper, Scissors - Game Started!')
       .setDescription(`**${challenger}** vs **${opponent}**\n\nBoth players, choose your move!\n\n**Rules:**\n🪨 Rock beats ✂️ Scissors\n📄 Paper beats 🪨 Rock\n✂️ Scissors beats 📄 Paper`)
       .addFields(
-        { name: '💰 Pot', value: '200 coins', inline: true },
+        { name: '🏆 Prize', value: '100 coins', inline: true },
         { name: '⏰ Time', value: '30 seconds', inline: true },
         { name: '🎯 Status', value: 'Waiting for choices...', inline: true }
       )
@@ -220,8 +202,8 @@ async function startGame(interaction, challenger, opponent, coinsData, coinsPath
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
         new ButtonBuilder()
-          .setCustomId('rps_pot')
-          .setLabel(`💰 Pot: 200 coins`)
+          .setCustomId('rps_prize')
+          .setLabel(`🏆 Prize: 100 coins`)
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),
         new ButtonBuilder()
@@ -388,12 +370,10 @@ async function determineWinner(interaction, challenger, opponent, gameState) {
 
     // Update coins
     if (result === 'tie') {
-      // Return coins to both players
-      gameState.coinsData[challenger.id].coins += 100;
-      gameState.coinsData[opponent.id].coins += 100;
+      // No coins given in case of tie
     } else {
-      // Winner gets all 200 coins
-      gameState.coinsData[winner.id].coins += 200;
+      // Winner gets 100 coins
+      gameState.coinsData[winner.id].coins += 100;
     }
 
     fs.writeFileSync(gameState.coinsPath, JSON.stringify(gameState.coinsData, null, 2));
@@ -406,14 +386,14 @@ async function determineWinner(interaction, challenger, opponent, gameState) {
 
     if (result === 'tie') {
       resultEmbed
-        .setDescription(`**It's a tie!**\n\n${challenger}: ${getEmoji(challengerChoice)} ${challengerChoice.toUpperCase()}\n${opponent}: ${getEmoji(opponentChoice)} ${opponentChoice.toUpperCase()}\n\n💰 Both players get their 100 coins back!`)
+        .setDescription(`**It's a tie!**\n\n${challenger}: ${getEmoji(challengerChoice)} ${challengerChoice.toUpperCase()}\n${opponent}: ${getEmoji(opponentChoice)} ${opponentChoice.toUpperCase()}\n\n🤝 No coins awarded for a tie!`)
         .addFields(
-          { name: '💰 New Balances', value: `${challenger}: **${gameState.coinsData[challenger.id].coins}** coins\n${opponent}: **${gameState.coinsData[opponent.id].coins}** coins`, inline: true }
+          { name: '💰 Current Balances', value: `${challenger}: **${gameState.coinsData[challenger.id].coins}** coins\n${opponent}: **${gameState.coinsData[opponent.id].coins}** coins`, inline: true }
         );
     } else {
       const loser = winner.id === challenger.id ? opponent : challenger;
       resultEmbed
-        .setDescription(`**${winner} wins!** 🎉\n\n${challenger}: ${getEmoji(challengerChoice)} ${challengerChoice.toUpperCase()}\n${opponent}: ${getEmoji(opponentChoice)} ${opponentChoice.toUpperCase()}\n\n💰 ${winner} wins 200 coins!`)
+        .setDescription(`**${winner} wins!** 🎉\n\n${challenger}: ${getEmoji(challengerChoice)} ${challengerChoice.toUpperCase()}\n${opponent}: ${getEmoji(opponentChoice)} ${opponentChoice.toUpperCase()}\n\n💰 ${winner} wins 100 coins!`)
         .addFields(
           { name: '💰 New Balances', value: `${winner}: **${gameState.coinsData[winner.id].coins}** coins\n${loser}: **${gameState.coinsData[loser.id].coins}** coins`, inline: true }
         );
@@ -431,14 +411,10 @@ async function determineWinner(interaction, challenger, opponent, gameState) {
 
 async function handleTimeout(interaction, challenger, opponent, gameState, timeoutPlayer) {
   try {
-    // Return coins to both players
-    gameState.coinsData[challenger.id].coins += 100;
-    gameState.coinsData[opponent.id].coins += 100;
-    fs.writeFileSync(gameState.coinsPath, JSON.stringify(gameState.coinsData, null, 2));
-
+    // No coins to return since no entry fee was paid
     const timeoutEmbed = new EmbedBuilder()
       .setTitle('⏰ Game Timeout')
-      .setDescription(`${timeoutPlayer === 'challenger' ? challenger : opponent} didn't make a choice in time.\n\n💰 Both players get their 100 coins back!`)
+      .setDescription(`${timeoutPlayer === 'challenger' ? challenger : opponent} didn't make a choice in time.\n\n⏰ Game cancelled due to timeout!`)
       .setColor(0xffa500)
       .setTimestamp();
 
