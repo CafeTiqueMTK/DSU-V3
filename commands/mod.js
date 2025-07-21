@@ -1,7 +1,11 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const settingsPath = path.join(__dirname, '../settings.json');
+
+// Définir le dossier de données persistant (Railway volume ou fallback local)
+const DATA_DIR = process.env.RAILWAY_VOLUME_PATH || '/data';
+const settingsPath = fs.existsSync(DATA_DIR) ? path.join(DATA_DIR, 'settings.json') : path.join(__dirname, '../settings.json');
+const warnsPath = fs.existsSync(DATA_DIR) ? path.join(DATA_DIR, 'warns.json') : path.join(__dirname, '../warns.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -69,7 +73,8 @@ module.exports = {
             .setDescription('Reason for mute')
             .setRequired(false)
         )
-    ),
+    )
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
   async execute(interaction) {
     // --- Permission check for Administrators and Moderators ---
     let hasPermission = false;
@@ -102,7 +107,7 @@ module.exports = {
         .setDescription('Only administrators and moderators can use this command.')
         .setColor(0xff0000)
         .setTimestamp();
-      await interaction.reply({ embeds: [permissionEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [permissionEmbed], flags: 64 });
       return;
     }
 
@@ -121,7 +126,7 @@ module.exports = {
         .setDescription('The specified user was not found on this server.')
         .setColor(0xff0000)
         .setTimestamp();
-      await interaction.reply({ embeds: [userNotFoundEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [userNotFoundEmbed], flags: 64 });
       return;
     }
 
@@ -133,7 +138,7 @@ module.exports = {
           .setDescription('You do not have permission to ban users.')
           .setColor(0xff0000)
           .setTimestamp();
-        await interaction.reply({ embeds: [banPermissionEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [banPermissionEmbed], flags: 64 });
         return;
       }
       // DM the user with embed
@@ -156,12 +161,11 @@ module.exports = {
         )
         .setColor(0x8B0000)
         .setTimestamp();
-      await interaction.reply({ embeds: [banSuccessEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [banSuccessEmbed], flags: 64 });
 
       // Moderation logging
       try {
-        const fs = require('fs');
-        const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+        const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
         const conf = settings[interaction.guild.id]?.logs;
         if (conf?.enabled && conf.categories?.mod && conf.channel) {
           const logChannel = interaction.guild.channels.cache.get(conf.channel);
@@ -202,12 +206,11 @@ module.exports = {
         )
         .setColor(0xffa500)
         .setTimestamp();
-      await interaction.reply({ embeds: [kickSuccessEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [kickSuccessEmbed], flags: 64 });
 
       // Moderation logging
       try {
-        const fs = require('fs');
-        const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+        const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
         const conf = settings[interaction.guild.id]?.logs;
         if (conf?.enabled && conf.categories?.mod && conf.channel) {
           const logChannel = interaction.guild.channels.cache.get(conf.channel);
@@ -229,9 +232,6 @@ module.exports = {
       } catch {}
     } else if (sub === 'warn') {
       // Add to warns.json
-      const fs = require('fs');
-      const path = require('path');
-      const warnsPath = path.join(__dirname, '../warns.json');
       let warnsData = {};
       if (fs.existsSync(warnsPath)) {
         warnsData = JSON.parse(fs.readFileSync(warnsPath, 'utf8'));
@@ -249,7 +249,7 @@ module.exports = {
       const currentWarnCount = warnsData[interaction.guild.id][user.id].length;
 
       // Check for automatic actions
-      const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
       const warnActions = settings[interaction.guild.id]?.warnActions || {};
       const actionToTake = warnActions[currentWarnCount];
 
@@ -338,10 +338,11 @@ module.exports = {
         )
         .setColor(actionExecuted ? 0xff0000 : 0xffc300)
         .setTimestamp();
-      await interaction.reply({ embeds: [warnSuccessEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [warnSuccessEmbed], flags: 64 });
 
       // Moderation logging
       try {
+        const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
         const conf = settings[interaction.guild.id]?.logs;
         if (conf?.enabled && conf.categories?.mod && conf.channel) {
           const logChannel = interaction.guild.channels.cache.get(conf.channel);
@@ -383,7 +384,7 @@ module.exports = {
           .setDescription('No "mute" role was found on this server. Please create a role named "mute" to use this command.')
           .setColor(0xff0000)
           .setTimestamp();
-        await interaction.reply({ embeds: [noMuteRoleEmbed], ephemeral: true });
+        await interaction.reply({ embeds: [noMuteRoleEmbed], flags: 64 });
         return;
       }
       await member.roles.add(muteRole, reason).catch(() => {});
@@ -402,7 +403,7 @@ module.exports = {
         muteSuccessEmbed.addFields({ name: '⏰ Duration', value: `${duration} minute(s)`, inline: true });
       }
       
-      await interaction.reply({ embeds: [muteSuccessEmbed], ephemeral: true });
+      await interaction.reply({ embeds: [muteSuccessEmbed], flags: 64 });
 
       // Moderation logging
       try {

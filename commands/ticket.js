@@ -80,7 +80,7 @@ module.exports = {
       subcommand
         .setName('embed')
         .setDescription('Configure the ticket creation embed'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild),
+    .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers),
 
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
