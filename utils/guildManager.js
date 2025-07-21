@@ -2,10 +2,10 @@ const fs = require('fs');
 const path = require('path');
 
 // Chemins des fichiers de données
-const settingsPath = path.join(__dirname, '..', 'settings.json');
-const warnsPath = path.join(__dirname, '..', 'warns.json');
-const coinsPath = path.join(__dirname, '..', 'coins.json');
-const workPath = path.join(__dirname, '..', 'work.json');
+const settingsPath = path.join('/data', 'settings.json');
+const warnsPath = path.join('/data', 'warns.json');
+const coinsPath = path.join('/data', 'coins.json');
+const workPath = path.join('/data', 'work.json');
 
 // Fonction pour charger les données d'un fichier
 function loadData(filePath) {

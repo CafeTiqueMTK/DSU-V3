@@ -67,7 +67,15 @@ const commandsArray = loadCommands(client, commandsPath);
 
 // Charger settings.json
 console.log('Loading settings.json...');
-const settingsPath = path.join(__dirname, 'settings.json');
+const settingsPath = path.join('/data', 'settings.json');
+// Crée le dossier /data s'il n'existe pas
+if (!fs.existsSync('/data')) {
+  fs.mkdirSync('/data', { recursive: true });
+}
+// Crée le fichier settings.json vide s'il n'existe pas
+if (!fs.existsSync(settingsPath)) {
+  fs.writeFileSync(settingsPath, '{}');
+}
 const settingsRaw = fs.readFileSync(settingsPath, 'utf-8');
 const settings = JSON.parse(settingsRaw);
 

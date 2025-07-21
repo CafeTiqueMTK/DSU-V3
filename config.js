@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const settingsPath = path.join(__dirname, '..', 'settings.json');
+const settingsPath = path.join('/data', 'settings.json');
 
 // Initialise le fichier s'il n'existe pas
 function ensureSettingsFile() {

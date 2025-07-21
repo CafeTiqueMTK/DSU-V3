@@ -1,8 +1,10 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
+const path = require('path');
+const settingsPath = path.join('/data', 'settings.json');
 
 function logModerationAction(guild, userTag, action, reason, moderator) {
-  const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+  const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
   const conf = settings[guild.id]?.logs;
 
   if (conf?.enabled && conf.categories?.mod && conf.channel) {

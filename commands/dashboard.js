@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionFlagsBits, ComponentType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const settingsPath = path.join(__dirname, '../settings.json');
+const settingsPath = path.join('/data', 'settings.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
