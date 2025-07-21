@@ -26,10 +26,8 @@ console.log('Creating Discord client...');
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.MessageContent // <-- Ajoute cet intent pour lire le contenu des messages
+    GatewayIntentBits.GuildMessages
   ]
 });
 
