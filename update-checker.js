@@ -162,10 +162,10 @@ class UpdateChecker {
       // Add role ping if configured
       let content = '';
       if (roleId) {
-        content = `<@&${roleId}> New update available!`;
+        content = `<@&${roleId}>`;
       }
 
-      await channel.send({ content, embeds: [embed] });
+      await channel.send({ content: content || undefined, embeds: [embed] });
       console.log(`✅ Update notification sent to ${channel.name} in ${channel.guild.name}`);
 
     } catch (error) {
