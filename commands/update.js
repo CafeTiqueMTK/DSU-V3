@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const updatesPath = path.join('/app/data', 'updates.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -62,11 +63,10 @@ module.exports = {
     const guildId = interaction.guild.id;
 
     // Load update configuration
-    const updatePath = path.join(__dirname, '..', 'data', 'updates.json');
     let updateConfig = {};
     
-    if (fs.existsSync(updatePath)) {
-      updateConfig = JSON.parse(fs.readFileSync(updatePath, 'utf-8'));
+    if (fs.existsSync(updatesPath)) {
+      updateConfig = JSON.parse(fs.readFileSync(updatesPath, 'utf-8'));
     }
 
     if (!updateConfig[guildId]) {
@@ -88,7 +88,7 @@ module.exports = {
         }
 
         updateConfig[guildId].enabled = true;
-        fs.writeFileSync(updatePath, JSON.stringify(updateConfig, null, 2));
+        fs.writeFileSync(updatesPath, JSON.stringify(updateConfig, null, 2));
 
         const embed = new EmbedBuilder()
           .setTitle('✅ Update Notifications Enabled')
@@ -108,7 +108,7 @@ module.exports = {
 
       } else if (subcommand === 'disable') {
         updateConfig[guildId].enabled = false;
-        fs.writeFileSync(updatePath, JSON.stringify(updateConfig, null, 2));
+        fs.writeFileSync(updatesPath, JSON.stringify(updateConfig, null, 2));
 
         const embed = new EmbedBuilder()
           .setTitle('❌ Update Notifications Disabled')
@@ -141,7 +141,7 @@ module.exports = {
         }
 
         updateConfig[guildId].channelId = channel.id;
-        fs.writeFileSync(updatePath, JSON.stringify(updateConfig, null, 2));
+        fs.writeFileSync(updatesPath, JSON.stringify(updateConfig, null, 2));
 
         const embed = new EmbedBuilder()
           .setTitle('✅ Update Channel Set')
@@ -163,7 +163,7 @@ module.exports = {
         const role = interaction.options.getRole('role');
         
         updateConfig[guildId].roleId = role.id;
-        fs.writeFileSync(updatePath, JSON.stringify(updateConfig, null, 2));
+        fs.writeFileSync(updatesPath, JSON.stringify(updateConfig, null, 2));
 
         const embed = new EmbedBuilder()
           .setTitle('✅ Update Role Set')
