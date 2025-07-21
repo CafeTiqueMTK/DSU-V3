@@ -11,10 +11,16 @@ if (!fs.existsSync(dataPath)) {
   console.log('📁 Created data directory');
 }
 
+const settingsPath = path.join('/data', 'settings.json');
+const warnsPath = path.join('/data', 'warns.json');
+const coinsPath = path.join('/data', 'coins.json');
+const workPath = path.join('/data', 'work.json');
+const funnymsgPath = path.join('/data', 'funnymsg.json');
+
 // Migrate settings.json
-if (fs.existsSync('settings.json')) {
+if (fs.existsSync(settingsPath)) {
   try {
-    const oldSettings = JSON.parse(fs.readFileSync('settings.json', 'utf8'));
+    const oldSettings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
     
     // Convert old format to new format
     Object.keys(oldSettings).forEach(guildId => {
@@ -24,7 +30,7 @@ if (fs.existsSync('settings.json')) {
     });
     
     // Backup old file
-    fs.renameSync('settings.json', 'settings.json.backup');
+    fs.renameSync(settingsPath, 'settings.json.backup');
     console.log('💾 Backed up old settings.json');
   } catch (error) {
     console.error('❌ Error migrating settings:', error);
@@ -32,9 +38,9 @@ if (fs.existsSync('settings.json')) {
 }
 
 // Migrate coins.json
-if (fs.existsSync('coins.json')) {
+if (fs.existsSync(coinsPath)) {
   try {
-    const oldCoins = JSON.parse(fs.readFileSync('coins.json', 'utf8'));
+    const oldCoins = JSON.parse(fs.readFileSync(coinsPath, 'utf8'));
     
     Object.keys(oldCoins).forEach(userId => {
       const coins = oldCoins[userId];
@@ -42,7 +48,7 @@ if (fs.existsSync('coins.json')) {
       console.log(`✅ Migrated coins for user: ${userId}`);
     });
     
-    fs.renameSync('coins.json', 'coins.json.backup');
+    fs.renameSync(coinsPath, 'coins.json.backup');
     console.log('💾 Backed up old coins.json');
   } catch (error) {
     console.error('❌ Error migrating coins:', error);
@@ -50,9 +56,9 @@ if (fs.existsSync('coins.json')) {
 }
 
 // Migrate work.json
-if (fs.existsSync('work.json')) {
+if (fs.existsSync(workPath)) {
   try {
-    const oldWork = JSON.parse(fs.readFileSync('work.json', 'utf8'));
+    const oldWork = JSON.parse(fs.readFileSync(workPath, 'utf8'));
     
     Object.keys(oldWork).forEach(userId => {
       const cooldown = oldWork[userId];
@@ -60,7 +66,7 @@ if (fs.existsSync('work.json')) {
       console.log(`✅ Migrated work cooldown for user: ${userId}`);
     });
     
-    fs.renameSync('work.json', 'work.json.backup');
+    fs.renameSync(workPath, 'work.json.backup');
     console.log('💾 Backed up old work.json');
   } catch (error) {
     console.error('❌ Error migrating work data:', error);
@@ -68,9 +74,9 @@ if (fs.existsSync('work.json')) {
 }
 
 // Migrate warns.json
-if (fs.existsSync('warns.json')) {
+if (fs.existsSync(warnsPath)) {
   try {
-    const oldWarns = JSON.parse(fs.readFileSync('warns.json', 'utf8'));
+    const oldWarns = JSON.parse(fs.readFileSync(warnsPath, 'utf8'));
     
     Object.keys(oldWarns).forEach(guildId => {
       const warnings = oldWarns[guildId];
@@ -78,7 +84,7 @@ if (fs.existsSync('warns.json')) {
       console.log(`✅ Migrated warnings for guild: ${guildId}`);
     });
     
-    fs.renameSync('warns.json', 'warns.json.backup');
+    fs.renameSync(warnsPath, 'warns.json.backup');
     console.log('💾 Backed up old warns.json');
   } catch (error) {
     console.error('❌ Error migrating warnings:', error);
@@ -86,7 +92,6 @@ if (fs.existsSync('warns.json')) {
 }
 
 // Create a funnymsg.json if it doesn't exist
-const funnymsgPath = path.join(dataPath, 'funnymsg.json');
 if (!fs.existsSync(funnymsgPath)) {
   fs.writeFileSync(funnymsgPath, JSON.stringify({}, null, 2));
   console.log('📝 Created empty funnymsg.json');

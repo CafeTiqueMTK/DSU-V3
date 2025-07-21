@@ -1,6 +1,8 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ComponentType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const settingsPath = path.join('/data', 'settings.json');
+const warnsPath = path.join('/data', 'warns.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,10 +28,8 @@ module.exports = {
       });
       const response = collected.first();
       if (response.content.trim().toUpperCase() === 'YES') {
-        const settingsPath = path.join(__dirname, '../settings.json');
-        const automodActionsPath = path.join(__dirname, '../automod_actions.json');
-        const warnsPath = path.join(__dirname, '../warns.json');
         fs.writeFileSync(settingsPath, '{}');
+        const automodActionsPath = path.join(__dirname, '../automod_actions.json');
         fs.writeFileSync(automodActionsPath, '{}');
         if (fs.existsSync(warnsPath)) fs.writeFileSync(warnsPath, '{}');
         await interaction.followUp({
