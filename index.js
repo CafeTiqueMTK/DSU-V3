@@ -93,6 +93,27 @@ async function resetGuildCommands() {
   }
 }
 
+// Ajout : Fonction pour supprimer les commandes globales de ton serveur principal uniquement
+async function resetGlobalCommandsFromGuild() {
+  try {
+    console.log('🗑️ Suppression des commandes globales de ton serveur principal...');
+    // Récupérer toutes les commandes globales
+    const globalCommands = await rest.get(Routes.applicationCommands(CLIENT_ID));
+    // Supprimer chaque commande globale individuellement de ton serveur
+    for (const command of globalCommands) {
+      try {
+        await rest.delete(Routes.applicationGuildCommand(CLIENT_ID, GUILD_ID, command.id));
+        console.log(`✅ Supprimé la commande globale "${command.name}" de ton serveur.`);
+      } catch (error) {
+        console.log(`⚠️ Impossible de supprimer la commande globale "${command.name}" de ton serveur (probablement déjà supprimée).`);
+      }
+    }
+    console.log('✅ Toutes les commandes globales ont été supprimées de ton serveur principal.');
+  } catch (error) {
+    console.error('Erreur lors de la suppression des commandes globales de ton serveur :', error);
+  }
+}
+
 // Ajout : Fonction pour supprimer toutes les commandes globales
 async function resetGlobalCommands() {
   try {
@@ -134,7 +155,7 @@ async function deployGlobalCommands() {
 // Ajout : Séquence complète
 (async () => {
   await resetGuildCommands();
-  await resetGlobalCommands();
+  await resetGlobalCommandsFromGuild(); // Supprime les globales de ton serveur
   await deployCommands();
   await deployGlobalCommands();
 })();
