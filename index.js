@@ -82,20 +82,62 @@ const settings = JSON.parse(settingsRaw);
 // Déployer les commandes
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
+// Ajout : Fonction pour supprimer toutes les commandes du serveur (guild)
+async function resetGuildCommands() {
+  try {
+    console.log('🗑️ Suppression des commandes du serveur...');
+    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), { body: [] });
+    console.log('✅ Toutes les commandes du serveur ont été supprimées.');
+  } catch (error) {
+    console.error('Erreur lors de la suppression des commandes du serveur :', error);
+  }
+}
+
+// Ajout : Fonction pour supprimer toutes les commandes globales
+async function resetGlobalCommands() {
+  try {
+    console.log('🗑️ Suppression des commandes globales...');
+    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: [] });
+    console.log('✅ Toutes les commandes globales ont été supprimées.');
+  } catch (error) {
+    console.error('Erreur lors de la suppression des commandes globales :', error);
+  }
+}
+
 async function deployCommands() {
   try {
-    console.log('Deploying commands to Discord API...');
-    await rest.put(Routes.applicationCommands(CLIENT_ID), {
+    console.log('Deploying commands to Discord API (guild only)...');
+    await rest.put(Routes.applicationGuildCommands(CLIENT_ID, GUILD_ID), {
       body: commandsArray,
     });
-    console.log('Commands deployed successfully.');
+    console.log('Guild commands deployed successfully.');
     // Ajout d'un log pour indiquer que la connexion va commencer après le déploiement
     console.log('If you do not see the bot online, check your bot token and permissions.');
   } catch (error) {
     console.error('Error while deploying commands:', error);
   }
 }
-deployCommands();
+
+// Ajout : Déployer les commandes globales (pour tous les autres serveurs)
+async function deployGlobalCommands() {
+  try {
+    console.log('Deploying commands to Discord API (global)...');
+    await rest.put(Routes.applicationCommands(CLIENT_ID), {
+      body: commandsArray,
+    });
+    console.log('Global commands deployed successfully.');
+  } catch (error) {
+    console.error('Error while deploying global commands:', error);
+  }
+}
+
+// Ajout : Séquence complète
+(async () => {
+  await resetGuildCommands();
+  await resetGlobalCommands();
+  await deployCommands();
+  await deployGlobalCommands();
+})();
 
 // Ajoutez ceci juste avant ou après deployCommands() pour lancer la connexion du bot :
 client.login(DISCORD_TOKEN);
