@@ -1,4 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+const settingsPath = path.join('/data', 'settings.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -12,6 +15,7 @@ module.exports = {
 
   async execute(interaction) {
     const question = interaction.options.getString('question');
+    const guildId = interaction.guild.id;
     
     // Check if Gemini API key is available
     const geminiApiKey = process.env.GEMINI_API_KEY;
@@ -67,10 +71,48 @@ module.exports = {
 
       await interaction.editReply({ embeds: [embed] });
 
+      // Log the Gemini interaction
+      await logGeminiInteraction(interaction, question, answer, true);
+
     } catch (error) {
       console.error('Error calling Gemini API:', error);
       
       await interaction.editReply(`❌ Error: Failed to get response from Gemini AI: ${error.message}`);
+      
+      // Log the failed Gemini interaction
+      await logGeminiInteraction(interaction, question, error.message, false);
     }
   }
-}; 
+};
+
+// Function to log Gemini interactions
+async function logGeminiInteraction(interaction, question, response, success) {
+  try {
+    if (!fs.existsSync(settingsPath)) return;
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    
+    if (!settings[interaction.guild.id] || !settings[interaction.guild.id].logs) return;
+    const logs = settings[interaction.guild.id].logs;
+    
+    if (!logs.enabled || !logs.channel || !logs.categories.gemini) return;
+    
+    const logChannel = interaction.guild.channels.cache.get(logs.channel);
+    if (!logChannel) return;
+    
+    const logEmbed = new EmbedBuilder()
+      .setTitle('🤖 Gemini AI Interaction')
+      .setColor(success ? 0x4285f4 : 0xff5555)
+      .addFields(
+        { name: 'User', value: `${interaction.user.tag} (${interaction.user.id})`, inline: true },
+        { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: true },
+        { name: 'Status', value: success ? '✅ Success' : '❌ Error', inline: true },
+        { name: 'Question', value: question.length > 1024 ? question.substring(0, 1021) + '...' : question, inline: false },
+        { name: 'Response', value: success ? (response.length > 1024 ? response.substring(0, 1021) + '...' : response) : `Error: ${response}`, inline: false }
+      )
+      .setTimestamp();
+    
+    await logChannel.send({ embeds: [logEmbed] });
+  } catch (error) {
+    console.error('Error logging Gemini interaction:', error);
+  }
+} 

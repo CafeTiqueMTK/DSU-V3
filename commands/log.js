@@ -46,7 +46,17 @@ module.exports = {
           farewell: false,
           vocal: false,
           mod: false,
-          automod: false
+          automod: false,
+          commands: false,
+          roles: false,
+          soundboard: false,
+          tickets: false,
+          channels: false,
+          economy: false,
+          bulkdelete: false,
+          messages: false,
+          invites: false,
+          gemini: false
         }
       };
     }
@@ -57,7 +67,16 @@ module.exports = {
     switch (sub) {
       case 'enable': {
         logs.enabled = true;
-        Object.keys(logs.categories).forEach(cat => logs.categories[cat] = true);
+        // Ensure all categories exist and are enabled
+        const allCategories = [
+          'arrived', 'farewell', 'vocal', 'mod', 'automod', 
+          'commands', 'roles', 'soundboard', 'tickets', 'channels', 
+          'economy', 'bulkdelete', 'messages', 'invites', 'gemini'
+        ];
+        allCategories.forEach(cat => {
+          if (!logs.categories[cat]) logs.categories[cat] = true;
+          else logs.categories[cat] = true;
+        });
         const embed = new EmbedBuilder()
           .setTitle('✅ Logs Enabled')
           .setDescription('Logs and all categories are now enabled.')
@@ -98,7 +117,17 @@ module.exports = {
             farewell: false,
             vocal: false,
             mod: false,
-            automod: false
+            automod: false,
+            commands: false,
+            roles: false,
+            soundboard: false,
+            tickets: false,
+            channels: false,
+            economy: false,
+            bulkdelete: false,
+            messages: false,
+            invites: false,
+            gemini: false
           }
         };
         const embed = new EmbedBuilder()
@@ -112,7 +141,16 @@ module.exports = {
         const channel = interaction.options.getChannel('channel');
         logs.enabled = true;
         logs.channel = channel.id;
-        Object.keys(logs.categories).forEach(cat => logs.categories[cat] = true);
+        // Ensure all categories exist and are enabled
+        const allCategories = [
+          'arrived', 'farewell', 'vocal', 'mod', 'automod', 
+          'commands', 'roles', 'soundboard', 'tickets', 'channels', 
+          'economy', 'bulkdelete', 'messages', 'invites', 'gemini'
+        ];
+        allCategories.forEach(cat => {
+          if (!logs.categories[cat]) logs.categories[cat] = true;
+          else logs.categories[cat] = true;
+        });
         const embed = new EmbedBuilder()
           .setTitle('📍 Log Channel Set')
           .setDescription(`Log channel set to <#${channel.id}>. Logging is now enabled for all categories.`)
