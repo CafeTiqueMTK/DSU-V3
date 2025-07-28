@@ -4,14 +4,14 @@ const { getGuildData, saveGuildData } = require('../utils/guildManager');
 module.exports = {
   data: new SlashCommandBuilder()
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .setName('anti')
-    .setDescription('Configure anti protection systems')
+    .setName('shields')
+    .setDescription('Configure shields protection systems')
         .addSubcommand(sub =>
       sub.setName('massmention')
-        .setDescription('Configure anti mass mention protection')
+        .setDescription('Configure shields mass mention protection')
         .addStringOption(opt =>
           opt.setName('action')
-            .setDescription('Enable or disable anti mass mention')
+            .setDescription('Enable or disable shields mass mention')
             .addChoices(
               { name: 'Enable', value: 'enable' },
               { name: 'Disable', value: 'disable' }
@@ -21,10 +21,10 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('spam')
-        .setDescription('Configure anti spam protection')
+        .setDescription('Configure shields spam protection')
         .addStringOption(opt =>
           opt.setName('action')
-            .setDescription('Enable or disable anti spam')
+            .setDescription('Enable or disable shields spam')
             .addChoices(
               { name: 'Enable', value: 'enable' },
               { name: 'Disable', value: 'disable' }
@@ -34,10 +34,10 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('invites')
-        .setDescription('Configure anti invites protection')
+        .setDescription('Configure shields invites protection')
         .addStringOption(opt =>
           opt.setName('action')
-            .setDescription('Enable or disable anti invites')
+            .setDescription('Enable or disable shields invites')
             .addChoices(
               { name: 'Enable', value: 'enable' },
               { name: 'Disable', value: 'disable' }
@@ -47,10 +47,10 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('links')
-        .setDescription('Configure anti links protection')
+        .setDescription('Configure anti links shields protection')
         .addStringOption(opt =>
           opt.setName('action')
-            .setDescription('Enable or disable anti links')
+            .setDescription('Enable or disable shields links')
             .addChoices(
               { name: 'Enable', value: 'enable' },
               { name: 'Disable', value: 'disable' }
@@ -60,10 +60,10 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('keywords')
-        .setDescription('Configure anti keywords protection')
+        .setDescription('Configure anti keywords shields protection')
         .addStringOption(opt =>
           opt.setName('action')
-            .setDescription('Enable or disable anti keywords')
+            .setDescription('Enable or disable shields keywords')
             .addChoices(
               { name: 'Enable', value: 'enable' },
               { name: 'Disable', value: 'disable' }
@@ -73,10 +73,10 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('roles')
-        .setDescription('Configure anti role mention protection')
+        .setDescription('Configure shields role mention protection')
         .addStringOption(opt =>
           opt.setName('action')
-            .setDescription('Enable or disable anti role mention')
+            .setDescription('Enable or disable shields role mention')
             .addChoices(
               { name: 'Enable', value: 'enable' },
               { name: 'Disable', value: 'disable' }
@@ -86,10 +86,10 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('bot')
-        .setDescription('Configure anti bot protection')
+        .setDescription('Configure anti bot shields protection')
         .addStringOption(opt =>
           opt.setName('action')
-            .setDescription('Enable or disable anti bot')
+            .setDescription('Enable or disable bot shields')
             .addChoices(
               { name: 'Enable', value: 'enable' },
               { name: 'Disable', value: 'disable' }
@@ -99,7 +99,7 @@ module.exports = {
     )
     .addSubcommand(sub =>
       sub.setName('raid')
-        .setDescription('Configure anti raid protection')
+        .setDescription('Configure anti raid shields protection')
         .addStringOption(opt =>
           opt.setName('action')
             .setDescription('Enable or disable anti raid')

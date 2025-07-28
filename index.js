@@ -28,7 +28,8 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent // Ajouté pour l'automod
+    GatewayIntentBits.MessageContent, // Ajouté pour l'automod
+    GatewayIntentBits.GuildPresences // Ajouté pour le badge Automod
   ]
 });
 
@@ -777,96 +778,7 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
   }
 });
 
-// Log roles - Modifications de rôles (création, suppression, modification)
-client.on('guildRoleCreate', async (role) => {
-  const logChannel = getLogChannel(role.guild, "roles");
-  if (!logChannel) return;
 
-  const embed = new EmbedBuilder()
-    .setTitle('✨ Role Created')
-    .addFields(
-      { name: 'Role', value: `<@&${role.id}>`, inline: true },
-      { name: 'Color', value: `#${role.color.toString(16).padStart(6, '0')}`, inline: true },
-      { name: 'Position', value: `${role.position}`, inline: true },
-      { name: 'Permissions', value: role.permissions.toArray().length > 0 ? role.permissions.toArray().join(', ') : 'None', inline: false },
-      { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
-    )
-    .setColor(role.color || 0x00ff99)
-    .setFooter({ text: 'DSU Role Logger' })
-    .setTimestamp(new Date());
-  await logChannel.send({ embeds: [embed] });
-  console.log(`Role created log sent for ${role.name}`);
-});
-
-client.on('guildRoleDelete', async (role) => {
-  const logChannel = getLogChannel(role.guild, "roles");
-  if (!logChannel) return;
-
-  const embed = new EmbedBuilder()
-    .setTitle('💥 Role Deleted')
-    .addFields(
-      { name: 'Role Name', value: role.name, inline: true },
-      { name: 'Role ID', value: role.id, inline: true },
-      { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
-    )
-    .setColor(0xff5555)
-    .setFooter({ text: 'DSU Role Logger' })
-    .setTimestamp(new Date());
-  await logChannel.send({ embeds: [embed] });
-  console.log(`Role deleted log sent for ${role.name}`);
-});
-
-client.on('guildRoleUpdate', async (oldRole, newRole) => {
-  const logChannel = getLogChannel(newRole.guild, "roles");
-  if (!logChannel) return;
-
-  const changes = [];
-  
-  if (oldRole.name !== newRole.name) {
-    changes.push(`**Name**: \`${oldRole.name}\` → \`${newRole.name}\``);
-  }
-  
-  if (oldRole.color !== newRole.color) {
-    const oldColor = `#${oldRole.color.toString(16).padStart(6, '0')}`;
-    const newColor = `#${newRole.color.toString(16).padStart(6, '0')}`;
-    changes.push(`**Color**: \`${oldColor}\` → \`${newColor}\``);
-  }
-  
-  if (oldRole.hoist !== newRole.hoist) {
-    changes.push(`**Hoist**: \`${oldRole.hoist}\` → \`${newRole.hoist}\``);
-  }
-  
-  if (oldRole.mentionable !== newRole.mentionable) {
-    changes.push(`**Mentionable**: \`${oldRole.mentionable}\` → \`${newRole.mentionable}\``);
-  }
-  
-  if (oldRole.permissions.bitfield !== newRole.permissions.bitfield) {
-    const addedPerms = newRole.permissions.toArray().filter(perm => !oldRole.permissions.has(perm));
-    const removedPerms = oldRole.permissions.toArray().filter(perm => !newRole.permissions.has(perm));
-    
-    if (addedPerms.length > 0) {
-      changes.push(`**Added Permissions**: ${addedPerms.join(', ')}`);
-    }
-    if (removedPerms.length > 0) {
-      changes.push(`**Removed Permissions**: ${removedPerms.join(', ')}`);
-    }
-  }
-
-  if (changes.length > 0) {
-    const embed = new EmbedBuilder()
-      .setTitle('🔧 Role Updated')
-      .addFields(
-        { name: 'Role', value: `<@&${newRole.id}>`, inline: true },
-        { name: 'Changes', value: changes.join('\n'), inline: false },
-        { name: 'Time', value: `<t:${Math.floor(Date.now()/1000)}:F>`, inline: false }
-      )
-      .setColor(newRole.color || 0xffcc00)
-      .setFooter({ text: 'DSU Role Logger' })
-      .setTimestamp(new Date());
-    await logChannel.send({ embeds: [embed] });
-    console.log(`Role updated log sent for ${newRole.name}`);
-  }
-});
 
 // Nouveau système Automod - Gestion des messages
 client.on('messageCreate', async (message) => {
@@ -1665,22 +1577,6 @@ client.on('messageReactionAdd', async (reaction, user) => {
   try {
     await member.roles.add(role);
     console.log(`Role ${role.name} added to ${user.tag} via reaction`);
-
-    // Log role addition
-    const logChannel = getLogChannel(reaction.message.guild, "roles");
-    if (logChannel) {
-      const embed = new EmbedBuilder()
-        .setTitle('🟢 Role Added')
-        .addFields(
-          { name: 'Member', value: `${user.tag} (<@${user.id}>)`, inline: true },
-          { name: 'Role', value: `${role.name} (<@&${role.id}>)`, inline: true },
-          { name: 'Method', value: 'Emoji reaction', inline: true }
-        )
-        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setColor(0x00ff99)
-        .setTimestamp(new Date());
-      await logChannel.send({ embeds: [embed] });
-    }
   } catch (error) {
     console.error('Error adding role via reaction:', error);
   }
@@ -1738,22 +1634,6 @@ client.on('messageReactionRemove', async (reaction, user) => {
   try {
     await member.roles.remove(role);
     console.log(`Role ${role.name} removed from ${user.tag} via reaction`);
-
-    // Log role removal
-    const logChannel = getLogChannel(reaction.message.guild, "roles");
-    if (logChannel) {
-      const embed = new EmbedBuilder()
-        .setTitle('🔴 Role Removed')
-        .addFields(
-          { name: 'Member', value: `${user.tag} (<@${user.id}>)`, inline: true },
-          { name: 'Role', value: `${role.name} (<@&${role.id}>)`, inline: true },
-          { name: 'Method', value: 'Emoji reaction', inline: true }
-        )
-        .setThumbnail(user.displayAvatarURL({ dynamic: true }))
-        .setColor(0xff5555)
-        .setTimestamp(new Date());
-      await logChannel.send({ embeds: [embed] });
-    }
   } catch (error) {
     console.error('Error removing role via reaction:', error);
   }
@@ -2525,6 +2405,8 @@ client.once('ready', () => {
   console.log(`✅ Bot connected as ${client.user.tag}`);
   updateChecker.start();
 });
+
+
 
 // Graceful shutdown
 process.on('SIGINT', () => {
