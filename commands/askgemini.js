@@ -16,13 +16,10 @@ module.exports = {
     // Check if Gemini API key is available
     const geminiApiKey = process.env.GEMINI_API_KEY;
     if (!geminiApiKey) {
-      const errorEmbed = new EmbedBuilder()
-        .setTitle('❌ Gemini API Not Configured')
-        .setDescription('The Gemini API key is not configured. Please set the `GEMINI_API_KEY` environment variable.')
-        .setColor(0xff0000)
-        .setTimestamp();
-      
-      return interaction.reply({ embeds: [errorEmbed], ephemeral: true });
+      return interaction.reply({ 
+        content: '❌ Gemini API Not Configured\nPlease set the `GEMINI_API_KEY` environment variable.',
+        ephemeral: true 
+      });
     }
 
     // Defer reply since API call might take time
@@ -57,31 +54,14 @@ module.exports = {
 
       const answer = data.candidates[0].content.parts[0].text;
 
-      // Create response embed
-      const embed = new EmbedBuilder()
-        .setTitle('🤖 Gemini AI Response')
-        .setDescription(answer.length > 4000 ? answer.substring(0, 4000) + '...' : answer)
-        .addFields(
-          { name: 'Question', value: question, inline: false },
-          { name: 'Model', value: 'Gemini 2.0 Flash', inline: true },
-          { name: 'Response Length', value: `${answer.length} characters`, inline: true }
-        )
-        .setColor(0x4285f4)
-        .setFooter({ text: 'Powered by Google Gemini AI' })
-        .setTimestamp();
-
-      await interaction.editReply({ embeds: [embed] });
+      // Send response as plain text
+      const responseText = answer.length > 4000 ? answer.substring(0, 4000) + '...' : answer;
+      await interaction.editReply(responseText);
 
     } catch (error) {
       console.error('Error calling Gemini API:', error);
       
-      const errorEmbed = new EmbedBuilder()
-        .setTitle('❌ Error')
-        .setDescription(`Failed to get response from Gemini AI: ${error.message}`)
-        .setColor(0xff0000)
-        .setTimestamp();
-      
-      await interaction.editReply({ embeds: [errorEmbed] });
+      await interaction.editReply(`❌ Error: Failed to get response from Gemini AI: ${error.message}`);
     }
   }
 }; 
