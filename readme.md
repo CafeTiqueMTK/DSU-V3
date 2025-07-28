@@ -189,6 +189,7 @@
 | `/github profile` | GitHub user profile | Everyone |
 | `/github repo` | GitHub repository info | Everyone |
 | `/changelog` | Latest GitHub commits | Everyone |
+| `/askgemini` | Ask questions to Google Gemini AI | Everyone |
 
 ### 🎫 **Ticket Commands**
 | Command | Description | Permissions |
@@ -257,6 +258,9 @@ GUILD_ID=your_guild_id
 
 # GitHub (optional)
 GITHUB_TOKEN=your_github_token
+
+# Gemini AI (optional)
+GEMINI_API_KEY=your_gemini_api_key
 
 # Environment
 NODE_ENV=production

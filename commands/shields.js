@@ -4,7 +4,7 @@ const { getGuildData, saveGuildData } = require('../utils/guildManager');
 module.exports = {
   data: new SlashCommandBuilder()
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .setName('shields')
+    .setName('shield')
     .setDescription('Configure shields protection systems')
         .addSubcommand(sub =>
       sub.setName('massmention')
