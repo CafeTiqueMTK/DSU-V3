@@ -30,10 +30,11 @@ module.exports = {
 
     try {
       // Make request to Gemini API
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiApiKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-goog-api-key': geminiApiKey
         },
         body: JSON.stringify({
           contents: [{
@@ -62,7 +63,7 @@ module.exports = {
         .setDescription(answer.length > 4000 ? answer.substring(0, 4000) + '...' : answer)
         .addFields(
           { name: 'Question', value: question, inline: false },
-          { name: 'Model', value: 'Gemini Pro', inline: true },
+          { name: 'Model', value: 'Gemini 2.0 Flash', inline: true },
           { name: 'Response Length', value: `${answer.length} characters`, inline: true }
         )
         .setColor(0x4285f4)
