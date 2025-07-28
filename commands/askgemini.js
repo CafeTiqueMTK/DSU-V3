@@ -54,9 +54,18 @@ module.exports = {
 
       const answer = data.candidates[0].content.parts[0].text;
 
-      // Send response as plain text
-      const responseText = answer.length > 4000 ? answer.substring(0, 4000) + '...' : answer;
-      await interaction.editReply(responseText);
+      // Create response embed
+      const embed = new EmbedBuilder()
+        .setTitle('🤖 Gemini AI Response')
+        .setDescription(answer.length > 4000 ? answer.substring(0, 4000) + '...' : answer)
+        .addFields(
+          { name: 'Question', value: question, inline: false }
+        )
+        .setColor(0x4285f4)
+        .setFooter({ text: `Requested by ${interaction.user.tag}` })
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
 
     } catch (error) {
       console.error('Error calling Gemini API:', error);
