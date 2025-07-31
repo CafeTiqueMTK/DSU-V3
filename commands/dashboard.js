@@ -20,27 +20,27 @@ module.exports = {
     if (!settings[guildId]) settings[guildId] = {};
     if (!settings[guildId].automod) settings[guildId].automod = { enabled: false, categories: {} };
 
-    // List of main modules/features to display (updated for your current commands)
+    // List of main modules/features to display (updated with all current commands)
     const modules = [
       {
         name: 'Automod',
         key: 'automod',
         enabled: settings[guildId].automod.enabled,
-        description: 'Filtering of links, spam, bad words, ghost ping, etc. Use /automod and /anti for config.',
+        description: 'Filtering of links, spam, bad words, ghost ping, etc. Use /automod for configuration.',
         emoji: '🛡️'
       },
       {
         name: 'Logs',
         key: 'logs',
         enabled: settings[guildId]?.logs?.enabled,
-        description: 'Logging of moderation, voice, joins, leaves. Use /log, /logconfig, /logchannelset.',
+        description: 'Logging system with 12 categories. Use /log for configuration.',
         emoji: '📜'
       },
       {
         name: 'Level System',
         key: 'level',
         enabled: settings[guildId]?.level?.enabled,
-        description: 'XP and levels for active members. Use /level for all options.',
+        description: 'XP and levels for active members. Use /rank to view levels.',
         emoji: '🏆'
       },
       {
@@ -65,25 +65,60 @@ module.exports = {
         emoji: '👋'
       },
       {
-        name: 'Warn System',
-        key: 'warn',
+        name: 'Ticket System',
+        key: 'ticket',
         enabled: true,
-        description: 'Warn, clearwarn, viewwarn, warnaction. Use /warn, /clearwarn, /viewwarn, /warnaction.',
-        emoji: '⚠️'
+        description: 'Support ticket system. Use /ticket setup to configure.',
+        emoji: '🎫'
       },
       {
-        name: 'Relay',
-        key: 'relay',
+        name: 'Reaction Roles',
+        key: 'reactionrole',
         enabled: true,
-        description: 'Relay messages as the bot. Use /relay.',
-        emoji: '📢'
+        description: 'Role assignment via reactions. Use /reactionrole setup.',
+        emoji: '🔘'
+      },
+      {
+        name: 'Economy',
+        key: 'economy',
+        enabled: true,
+        description: 'Coin system with work, streak, shop. Use /work, /mycoins, /ecoman.',
+        emoji: '💰'
+      },
+      {
+        name: 'Moderation',
+        key: 'moderation',
+        enabled: true,
+        description: 'Ban, kick, mute, purge, warn system. Use /mod, /warn, /clearwarn.',
+        emoji: '⚖️'
+      },
+      {
+        name: 'AI Features',
+        key: 'ai',
+        enabled: true,
+        description: 'Gemini AI integration. Use /askgemini for AI assistance.',
+        emoji: '🤖'
+      },
+      {
+        name: 'Fun Commands',
+        key: 'fun',
+        enabled: true,
+        description: 'Games, memes, ratings, RPS. Use /rps, /meme, /chadrater, etc.',
+        emoji: '🎮'
+      },
+      {
+        name: 'Utility',
+        key: 'utility',
+        enabled: true,
+        description: 'Info, weather, GitHub, Wikipedia. Use /userinfo, /weather, /github.',
+        emoji: '🔧'
       }
     ];
 
     function getDashboardEmbed(selectedKey = null) {
       const embed = new EmbedBuilder()
         .setTitle('📊 Interactive Dashboard')
-        .setDescription('Select a module to configure or toggle it on/off with the buttons below.')
+        .setDescription('Select a module to configure or toggle it on/off with the buttons below.\n\n**Total Modules:** 12 | **Available Commands:** 50+')
         .setColor(0x00bfff)
         .setTimestamp();
       modules.forEach(mod => {
@@ -104,7 +139,7 @@ module.exports = {
       const selectRows = [];
       let currentRow = new ActionRowBuilder();
       modules.forEach((mod, idx) => {
-        if (currentRow.components.length === 5) {
+        if (currentRow.components.length === 4) {
           selectRows.push(currentRow);
           currentRow = new ActionRowBuilder();
         }
