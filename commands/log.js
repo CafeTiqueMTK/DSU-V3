@@ -48,14 +48,12 @@ module.exports = {
           mod: false,
           automod: false,
           commands: false,
-          roles: false,
           soundboard: false,
           tickets: false,
           channels: false,
           economy: false,
           bulkdelete: false,
           messages: false,
-          invites: false,
           gemini: false
         }
       };
@@ -70,8 +68,8 @@ module.exports = {
         // Ensure all categories exist and are enabled
         const allCategories = [
           'arrived', 'farewell', 'vocal', 'mod', 'automod', 
-          'commands', 'roles', 'soundboard', 'tickets', 'channels', 
-          'economy', 'bulkdelete', 'messages', 'invites', 'gemini'
+          'commands', 'soundboard', 'tickets', 'channels', 
+          'economy', 'bulkdelete', 'messages', 'gemini'
         ];
         allCategories.forEach(cat => {
           if (!logs.categories[cat]) logs.categories[cat] = true;
@@ -119,14 +117,12 @@ module.exports = {
             mod: false,
             automod: false,
             commands: false,
-            roles: false,
             soundboard: false,
             tickets: false,
             channels: false,
             economy: false,
             bulkdelete: false,
             messages: false,
-            invites: false,
             gemini: false
           }
         };
@@ -144,8 +140,8 @@ module.exports = {
         // Ensure all categories exist and are enabled
         const allCategories = [
           'arrived', 'farewell', 'vocal', 'mod', 'automod', 
-          'commands', 'roles', 'soundboard', 'tickets', 'channels', 
-          'economy', 'bulkdelete', 'messages', 'invites', 'gemini'
+          'commands', 'soundboard', 'tickets', 'channels', 
+          'economy', 'bulkdelete', 'messages', 'gemini'
         ];
         allCategories.forEach(cat => {
           if (!logs.categories[cat]) logs.categories[cat] = true;
