@@ -79,7 +79,7 @@ module.exports = {
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
-    const reactionRolesPath = path.join(__dirname, '..', 'reaction_roles.json');
+    const reactionRolesPath = path.join('/data', 'reaction_roles.json');
 
     // Charger ou créer le fichier de configuration
     let reactionRoles = {};

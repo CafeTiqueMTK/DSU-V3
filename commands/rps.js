@@ -35,7 +35,7 @@ module.exports = {
       }
 
       // Load coins data
-      const coinsPath = path.join(__dirname, '..', 'coins.json');
+      const coinsPath = path.join('/data', 'coins.json');
       let coinsData = {};
       if (fs.existsSync(coinsPath)) {
         coinsData = JSON.parse(fs.readFileSync(coinsPath, 'utf-8'));

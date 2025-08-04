@@ -4,8 +4,8 @@ const path = require('path');
 
 // Définir le dossier de données persistant (Railway volume ou fallback local)
 const DATA_DIR = process.env.RAILWAY_VOLUME_PATH || '/data';
-const settingsPath = path.join('/app/data', 'settings.json');
-const warnsPath = path.join('/app/data', 'warns.json');
+const settingsPath = path.join('/data', 'settings.json');
+const warnsPath = path.join('/data', 'warns.json');
 
 module.exports = {
   data: new SlashCommandBuilder()

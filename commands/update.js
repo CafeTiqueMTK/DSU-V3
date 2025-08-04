@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
-const updatesPath = path.join('/app/data', 'updates.json');
+const updatesPath = path.join('/data', 'updates.json');
 
 module.exports = {
   data: new SlashCommandBuilder()

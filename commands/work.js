@@ -10,8 +10,8 @@ module.exports = {
   async execute(interaction) {
     try {
       const userId = interaction.user.id;
-      const coinsPath = path.join(__dirname, '..', 'coins.json');
-      const workPath = path.join(__dirname, '..', 'work.json');
+      const coinsPath = path.join('/data', 'coins.json');
+      const workPath = path.join('/data', 'work.json');
 
       // Load coins data
       let coinsData = {};

@@ -79,7 +79,11 @@ module.exports = {
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
-    const reactionRolesEmojiPath = path.join(__dirname, '..', 'reaction_roles_emoji.json');
+    
+    // Utiliser le chemin de données centralisé
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
+    const dataPath = isProduction ? '/data' : path.join(__dirname, '..');
+    const reactionRolesEmojiPath = path.join(dataPath, 'reaction_roles_emoji.json');
 
     // Charger ou créer le fichier de configuration
     let reactionRolesEmoji = {};

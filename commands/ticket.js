@@ -85,7 +85,7 @@ module.exports = {
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
-    const ticketsPath = path.join(__dirname, '..', 'tickets.json');
+    const ticketsPath = path.join('/data', 'tickets.json');
 
     // Load or create config file
     let ticketsConfig = {};

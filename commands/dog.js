@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fetch = require('node-fetch');
 
 module.exports = {
@@ -14,7 +14,16 @@ module.exports = {
         await interaction.reply({ content: 'No dog image found.', ephemeral: true });
         return;
       }
-      await interaction.reply({ content: 'Here is a dog 🐶', files: [data.message] });
+      
+      const embed = new EmbedBuilder()
+        .setTitle('🐶 Random Dog Image')
+        .setDescription('Here is a cute dog for you!')
+        .setImage(data.message)
+        .setColor(0x00ff99)
+        .setFooter({ text: 'Powered by dog.ceo API' })
+        .setTimestamp(new Date());
+      
+      await interaction.reply({ embeds: [embed] });
     } catch (e) {
       await interaction.reply({ content: 'Failed to fetch dog image.', ephemeral: true });
     }

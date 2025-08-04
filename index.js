@@ -236,7 +236,7 @@ client.on(Events.InteractionCreate, async interaction => {
   } else if (interaction.isModalSubmit() && interaction.customId === 'ticket_name_modal') {
     // Handle ticket name modal submission
     const guildId = interaction.guild.id;
-    const ticketsPath = path.join(__dirname, 'tickets.json');
+    const ticketsPath = path.join('/data', 'tickets.json');
     
     let ticketsConfig = {};
     if (fs.existsSync(ticketsPath)) {
@@ -431,7 +431,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
   } else if (interaction.isButton() && interaction.customId === 'create_ticket') {
     // Handle ticket creation button
-    const ticketsPath = path.join(__dirname, 'tickets.json');
+    const ticketsPath = path.join('/data', 'tickets.json');
     let ticketsConfig = {};
     if (fs.existsSync(ticketsPath)) {
       ticketsConfig = JSON.parse(fs.readFileSync(ticketsPath, 'utf-8'));
@@ -506,7 +506,7 @@ client.on(Events.InteractionCreate, async interaction => {
   } else if (interaction.isButton() && interaction.customId === 'close_ticket') {
     // Handle ticket close button
     const guildId = interaction.guild.id;
-    const ticketsPath = path.join(__dirname, 'tickets.json');
+    const ticketsPath = path.join('/data', 'tickets.json');
     
     let ticketsConfig = {};
     if (fs.existsSync(ticketsPath)) {
@@ -593,7 +593,7 @@ client.on('messageCreate', async (message) => {
 client.on('guildMemberAdd', async (member) => {
   console.log(`New member joined: ${member.user.tag}`);
   const guildId = member.guild.id;
-  const settingsPath = path.join(__dirname, 'settings.json');
+  const settingsPath = path.join('/data', 'settings.json');
 
   if (!fs.existsSync(settingsPath)) return;
   const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
@@ -616,7 +616,7 @@ client.on('guildMemberAdd', async (member) => {
 function getLogChannel(guild, type = "mod") {
   let settings;
   try {
-    settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+    settings = JSON.parse(fs.readFileSync('/data/settings.json', 'utf-8'));
   } catch {
     settings = {};
   }
@@ -787,7 +787,7 @@ client.on('messageCreate', async (message) => {
   // Recharge settings à chaque message
   let settings;
   try {
-    settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+    settings = JSON.parse(fs.readFileSync('/data/settings.json', 'utf-8'));
   } catch {
     settings = {};
   }
@@ -1341,7 +1341,7 @@ function logModerationAction(guild, user, action, reason, moderator) {
   // Correction : bien charger settings.json et vérifier la config
   let settings;
   try {
-    settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+    settings = JSON.parse(fs.readFileSync('/data/settings.json', 'utf-8'));
   } catch {
     settings = {};
   }
@@ -1381,7 +1381,7 @@ client.logModerationAction = logModerationAction;
 
 // Gestion des événements de bienvenue
 client.on('guildMemberAdd', async member => {
-  const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+  const settings = JSON.parse(fs.readFileSync('/data/settings.json', 'utf-8'));
   const conf = settings[member.guild.id]?.welcome;
 
   if (conf?.enabled && conf.channel) {
@@ -1403,7 +1403,7 @@ client.on('guildMemberAdd', async member => {
 
 // Gestion des événements de départ
 client.on('guildMemberRemove', async member => {
-  const settings = JSON.parse(fs.readFileSync('./settings.json', 'utf-8'));
+  const settings = JSON.parse(fs.readFileSync('/data/settings.json', 'utf-8'));
   const conf = settings[member.guild.id]?.farewell;
 
   if (conf?.enabled && conf.channel) {

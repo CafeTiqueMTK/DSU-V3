@@ -11,7 +11,7 @@ module.exports = {
 
   async execute(interaction) {
     // Load config
-    const config = JSON.parse(fs.readFileSync(path.join(__dirname, '../config.json'), 'utf-8'));
+    const config = JSON.parse(fs.readFileSync(path.join('/data', 'config.json'), 'utf-8'));
     const commandsPath = path.join(__dirname);
     const client = interaction.client;
 
