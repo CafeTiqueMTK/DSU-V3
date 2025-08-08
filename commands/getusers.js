@@ -41,18 +41,27 @@ module.exports = {
       return await interaction.reply({ embeds: [embed], ephemeral: true });
     }
 
-    try {
-      // Répondre immédiatement pour éviter le timeout
-      const loadingEmbed = new EmbedBuilder()
-        .setTitle('⏳ Traitement en cours')
-        .setDescription('Récupération de la liste des utilisateurs...')
-        .setColor(0xFFFF00)
-        .setTimestamp();
-      
-      await interaction.reply({ embeds: [loadingEmbed], ephemeral: true });
+         try {
+       // Répondre immédiatement pour éviter le timeout
+       const loadingEmbed = new EmbedBuilder()
+         .setTitle('⏳ Traitement en cours')
+         .setDescription('Récupération de la liste des utilisateurs...')
+         .setColor(0xFFFF00)
+         .setTimestamp();
+       
+       await interaction.reply({ embeds: [loadingEmbed], ephemeral: true });
 
-             // Récupérer tous les membres du serveur
+       // Récupérer tous les membres du serveur
        const guild = interaction.guild;
+       
+       // Vérifier les permissions du bot
+       const botMember = await guild.members.fetch(interaction.client.user.id);
+       if (!botMember.permissions.has('ViewAuditLog')) {
+         console.warn('Bot n\'a pas la permission ViewAuditLog');
+       }
+       if (!botMember.permissions.has('ManageGuild')) {
+         console.warn('Bot n\'a pas la permission ManageGuild');
+       }
        
        // Vérifier que le bot a les permissions nécessaires
        if (!guild.members) {
@@ -73,27 +82,48 @@ module.exports = {
        
        const usersList = [];
       
-      members.forEach(member => {
-        const user = member.user;
-        const roles = member.roles.cache
-          .filter(role => role.id !== guild.id) // Exclure le rôle @everyone
-          .map(role => role.name)
-          .join(', ');
-        
-        usersList.push({
-          id: user.id,
-          username: user.username,
-          globalName: user.globalName || user.username,
-          tag: user.tag,
-          joinedAt: member.joinedAt ? member.joinedAt.toISOString() : 'Inconnu',
-          roles: roles || 'Aucun rôle',
-          isBot: user.bot,
-          status: member.presence?.status || 'offline'
-        });
-      });
+             members.forEach(member => {
+         try {
+           const user = member.user;
+           if (!user) {
+             console.warn(`Membre sans utilisateur: ${member.id}`);
+             return;
+           }
+           
+           const roles = member.roles.cache
+             .filter(role => role.id !== guild.id) // Exclure le rôle @everyone
+             .map(role => role.name)
+             .join(', ');
+           
+           usersList.push({
+             id: user.id,
+             username: user.username,
+             globalName: user.globalName || user.username,
+             tag: user.tag,
+             joinedAt: member.joinedAt ? member.joinedAt.toISOString() : 'Inconnu',
+             roles: roles || 'Aucun rôle',
+             isBot: user.bot,
+             status: member.presence?.status || 'offline'
+           });
+         } catch (memberError) {
+           console.warn(`Erreur lors du traitement du membre ${member.id}:`, memberError);
+         }
+       });
 
-      // Trier par date d'arrivée (plus récent en premier)
-      usersList.sort((a, b) => new Date(b.joinedAt) - new Date(a.joinedAt));
+             // Vérifier qu'on a récupéré des utilisateurs
+       if (usersList.length === 0) {
+         throw new Error('Aucun utilisateur valide trouvé dans le serveur.');
+       }
+       
+       console.log(`Récupération terminée: ${usersList.length} utilisateurs trouvés`);
+       
+       // Trier par date d'arrivée (plus récent en premier)
+       usersList.sort((a, b) => {
+         if (a.joinedAt === 'Inconnu' && b.joinedAt === 'Inconnu') return 0;
+         if (a.joinedAt === 'Inconnu') return 1;
+         if (b.joinedAt === 'Inconnu') return -1;
+         return new Date(b.joinedAt) - new Date(a.joinedAt);
+       });
 
              // Créer le fichier JSON avec les données des utilisateurs
        const jsonData = {
