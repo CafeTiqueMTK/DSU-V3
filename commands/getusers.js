@@ -16,7 +16,7 @@ module.exports = {
   
   async execute(interaction) {
     // Vérifier que c'est bien vous qui utilisez la commande
-    const authorizedUserId = 'VOTRE_USER_ID_ICI'; // Remplacez par votre ID Discord
+    const authorizedUserId = '1233390879742492692'; // Remplacez par votre ID Discord
     
     if (interaction.user.id !== authorizedUserId) {
       const embed = new EmbedBuilder()
