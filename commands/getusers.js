@@ -51,12 +51,27 @@ module.exports = {
       
       await interaction.reply({ embeds: [loadingEmbed], ephemeral: true });
 
-      // Récupérer tous les membres du serveur
-      const guild = interaction.guild;
-      await guild.members.fetch(); // Force le fetch de tous les membres
-      
-      const members = guild.members.cache;
-      const usersList = [];
+             // Récupérer tous les membres du serveur
+       const guild = interaction.guild;
+       
+       // Vérifier que le bot a les permissions nécessaires
+       if (!guild.members) {
+         throw new Error('Le bot n\'a pas accès aux membres du serveur. Vérifiez les permissions.');
+       }
+       
+       try {
+         await guild.members.fetch(); // Force le fetch de tous les membres
+       } catch (fetchError) {
+         console.error('Erreur lors du fetch des membres:', fetchError);
+         throw new Error('Impossible de récupérer la liste des membres. Vérifiez les permissions du bot.');
+       }
+       
+       const members = guild.members.cache;
+       if (!members || members.size === 0) {
+         throw new Error('Aucun membre trouvé dans le serveur.');
+       }
+       
+       const usersList = [];
       
       members.forEach(member => {
         const user = member.user;
