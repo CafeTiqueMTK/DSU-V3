@@ -12,13 +12,25 @@ function loadMarriageData() {
       stats: {
         total_marriages: 0,
         total_divorces: 0
+      },
+      config: {
+        announcementChannel: null
       }
     };
     fs.writeFileSync(dataPath, JSON.stringify(defaultData, null, 2));
     return defaultData;
   }
   const data = fs.readFileSync(dataPath, 'utf8');
-  return JSON.parse(data);
+  const parsedData = JSON.parse(data);
+  
+  // S'assurer que la configuration existe
+  if (!parsedData.config) {
+    parsedData.config = {
+      announcementChannel: null
+    };
+  }
+  
+  return parsedData;
 }
 
 // Fonction pour sauvegarder les données de mariage
@@ -126,10 +138,19 @@ module.exports = {
           components: []
         });
 
-        // Message d'annonce dans le canal
-        await interaction.channel.send({
-          content: `💔 **DIVORCE ANNOUNCEMENT** 💔\n${user} and ${partner} have officially divorced.\n\nWe wish them both the best in their future endeavors. 💔`
-        });
+        // Message d'annonce dans le canal configuré (si configuré)
+        try {
+          if (marriageData.config && marriageData.config.announcementChannel) {
+            const announcementChannel = await interaction.client.channels.fetch(marriageData.config.announcementChannel);
+            if (announcementChannel) {
+              await announcementChannel.send({
+                content: `💔 **DIVORCE ANNOUNCEMENT** 💔\n${user} and ${partner} have officially divorced.\n\nWe wish them both the best in their future endeavors. 💔`
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error sending divorce announcement:', error);
+        }
 
       } else if (i.customId === 'cancel_divorce') {
         // Divorce annulé

@@ -10,6 +10,8 @@ Un système de mariage complet pour Discord avec des commandes d'interaction rom
 - **`/marriageinfo [@user]`** - Voir les informations de mariage
 - **`/marriagestats`** - Voir les statistiques de mariage
 - **`/marriagelist`** - Lister tous les mariages actifs
+- **`/marrysys setchannel #channel`** - Configurer le canal d'annonce (Admin)
+- **`/marrysys status`** - Voir la configuration du système (Admin)
 
 ### 💕 Commandes d'Interaction Romantique
 - **`/kiss @user`** - Embrasser quelqu'un
@@ -26,6 +28,7 @@ Un système de mariage complet pour Discord avec des commandes d'interaction rom
 - Un embed avec des boutons apparaîtra
 - Seule la personne ciblée peut accepter ou refuser
 - La proposition expire après 1 minute
+- Les annonces de mariage sont envoyées dans le canal configuré (si configuré)
 
 ### 2. Interactions Romantiques
 ```
@@ -42,6 +45,12 @@ Un système de mariage complet pour Discord avec des commandes d'interaction rom
 /divorce - Divorcer (avec confirmation)
 /marriageinfo - Voir son statut marital
 /marriageinfo @utilisateur - Voir le statut d'un autre utilisateur
+```
+
+### 4. Configuration (Admin)
+```
+/marrysys setchannel #canal - Configurer le canal d'annonce
+/marrysys status - Voir la configuration actuelle
 ```
 
 ## 📊 Statistiques

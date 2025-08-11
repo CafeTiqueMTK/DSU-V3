@@ -12,13 +12,25 @@ function loadMarriageData() {
       stats: {
         total_marriages: 0,
         total_divorces: 0
+      },
+      config: {
+        announcementChannel: null
       }
     };
     fs.writeFileSync(dataPath, JSON.stringify(defaultData, null, 2));
     return defaultData;
   }
   const data = fs.readFileSync(dataPath, 'utf8');
-  return JSON.parse(data);
+  const parsedData = JSON.parse(data);
+  
+  // S'assurer que la configuration existe
+  if (!parsedData.config) {
+    parsedData.config = {
+      announcementChannel: null
+    };
+  }
+  
+  return parsedData;
 }
 
 module.exports = {
