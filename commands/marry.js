@@ -37,152 +37,187 @@ module.exports = {
         .setRequired(true)),
 
   async execute(interaction) {
-    const proposer = interaction.user;
-    const target = interaction.options.getUser('user');
-    const marriageData = loadMarriageData();
+    try {
+      const proposer = interaction.user;
+      const target = interaction.options.getUser('user');
+      const marriageData = loadMarriageData();
 
-    // Vérifications
-    if (target.id === proposer.id) {
-      return interaction.reply({
-        content: '❌ You cannot marry yourself!',
-        ephemeral: true
-      });
-    }
-
-    if (target.bot) {
-      return interaction.reply({
-        content: '❌ You cannot marry a bot!',
-        ephemeral: true
-      });
-    }
-
-    // Vérifier si l'un des deux est déjà marié
-    const proposerMarried = Object.values(marriageData.marriages).find(m => 
-      m.user1 === proposer.id || m.user2 === proposer.id
-    );
-    
-    const targetMarried = Object.values(marriageData.marriages).find(m => 
-      m.user1 === target.id || m.user2 === target.id
-    );
-
-    if (proposerMarried) {
-      return interaction.reply({
-        content: '❌ You are already married! You must divorce first.',
-        ephemeral: true
-      });
-    }
-
-    if (targetMarried) {
-      return interaction.reply({
-        content: `❌ ${target.username} is already married!`,
-        ephemeral: true
-      });
-    }
-
-    // Créer l'embed de proposition
-    const embed = new EmbedBuilder()
-      .setTitle('💍 Marriage Proposal')
-      .setDescription(`${proposer} is proposing to ${target}!\n\nWill you accept this marriage proposal?`)
-      .setColor(0xff69b4)
-      .setThumbnail(proposer.displayAvatarURL())
-      .setTimestamp()
-      .setFooter({ text: 'Love is in the air! 💕' });
-
-    // Créer les boutons
-    const acceptButton = new ButtonBuilder()
-      .setCustomId('accept_marriage')
-      .setLabel('💖 Accept')
-      .setStyle(ButtonStyle.Success);
-
-    const declineButton = new ButtonBuilder()
-      .setCustomId('decline_marriage')
-      .setLabel('💔 Decline')
-      .setStyle(ButtonStyle.Danger);
-
-    const row = new ActionRowBuilder()
-      .addComponents(acceptButton, declineButton);
-
-    const response = await interaction.reply({
-      embeds: [embed],
-      components: [row],
-      fetchReply: true
-    });
-
-    // Collecteur pour les boutons
-    const collector = response.createMessageComponentCollector({
-      time: 60000 // 1 minute
-    });
-
-    collector.on('collect', async i => {
-      if (i.user.id !== target.id) {
-        return i.reply({
-          content: '❌ This proposal is not for you!',
+      // Vérifications
+      if (target.id === proposer.id) {
+        return await interaction.reply({
+          content: '❌ You cannot marry yourself!',
           ephemeral: true
         });
       }
 
-      if (i.customId === 'accept_marriage') {
-        // Mariage accepté
-        const marriageId = `${proposer.id}_${target.id}`;
-        const marriage = {
-          user1: proposer.id,
-          user2: target.id,
-          proposer: proposer.id,
-          date: new Date().toISOString(),
-          guild: interaction.guild.id
-        };
-
-        marriageData.marriages[marriageId] = marriage;
-        marriageData.stats.total_marriages++;
-        saveMarriageData(marriageData);
-
-        const successEmbed = new EmbedBuilder()
-          .setTitle('💒 Wedding Bells!')
-          .setDescription(`🎉 Congratulations! ${proposer} and ${target} are now married! 💕\n\nMay your love last forever! 💖`)
-          .setColor(0x00ff00)
-          .setThumbnail(target.displayAvatarURL())
-          .setTimestamp()
-          .setFooter({ text: 'Happily ever after! 💑' });
-
-        await i.update({
-          embeds: [successEmbed],
-          components: []
-        });
-
-        // Message de félicitations dans le canal
-        await interaction.channel.send({
-          content: `🎊 **WEDDING ANNOUNCEMENT!** 🎊\n${proposer} and ${target} are now officially married! 💒💕\n\nEveryone, please congratulate the happy couple! 🎉`
-        });
-
-      } else if (i.customId === 'decline_marriage') {
-        // Mariage refusé
-        const declineEmbed = new EmbedBuilder()
-          .setTitle('💔 Proposal Declined')
-          .setDescription(`${target} has declined ${proposer}'s marriage proposal.\n\nIt's okay, there are plenty of fish in the sea! 🐟`)
-          .setColor(0xff0000)
-          .setTimestamp()
-          .setFooter({ text: 'Better luck next time! 💔' });
-
-        await i.update({
-          embeds: [declineEmbed],
-          components: []
+      if (target.bot) {
+        return await interaction.reply({
+          content: '❌ You cannot marry a bot!',
+          ephemeral: true
         });
       }
-    });
 
-    collector.on('end', collected => {
-      if (collected.size === 0) {
-        const timeoutEmbed = new EmbedBuilder()
-          .setTitle('⏰ Proposal Expired')
-          .setDescription(`${target} did not respond to ${proposer}'s marriage proposal in time.`)
-          .setColor(0x808080)
-          .setTimestamp();
+      // Vérifier si l'un des deux est déjà marié
+      const proposerMarried = Object.values(marriageData.marriages).find(m => 
+        m.user1 === proposer.id || m.user2 === proposer.id
+      );
+      
+      const targetMarried = Object.values(marriageData.marriages).find(m => 
+        m.user1 === target.id || m.user2 === target.id
+      );
 
-        interaction.editReply({
-          embeds: [timeoutEmbed],
-          components: []
+      if (proposerMarried) {
+        return await interaction.reply({
+          content: '❌ You are already married! You must divorce first.',
+          ephemeral: true
         });
       }
-    });
+
+      if (targetMarried) {
+        return await interaction.reply({
+          content: `❌ ${target.username} is already married!`,
+          ephemeral: true
+        });
+      }
+
+      // Créer l'embed de proposition
+      const embed = new EmbedBuilder()
+        .setTitle('💍 Marriage Proposal')
+        .setDescription(`${proposer} is proposing to ${target}!\n\nWill you accept this marriage proposal?`)
+        .setColor(0xff69b4)
+        .setThumbnail(proposer.displayAvatarURL())
+        .setTimestamp()
+        .setFooter({ text: 'Love is in the air! 💕' });
+
+      // Créer les boutons
+      const acceptButton = new ButtonBuilder()
+        .setCustomId('accept_marriage')
+        .setLabel('💖 Accept')
+        .setStyle(ButtonStyle.Success);
+
+      const declineButton = new ButtonBuilder()
+        .setCustomId('decline_marriage')
+        .setLabel('💔 Decline')
+        .setStyle(ButtonStyle.Danger);
+
+      const row = new ActionRowBuilder()
+        .addComponents(acceptButton, declineButton);
+
+      // Envoyer la proposition
+      const response = await interaction.reply({
+        embeds: [embed],
+        components: [row],
+        fetchReply: true
+      });
+
+      // Collecteur pour les boutons
+      const collector = response.createMessageComponentCollector({
+        time: 60000 // 1 minute
+      });
+
+      collector.on('collect', async i => {
+        try {
+          // Vérifier que c'est la bonne personne qui répond
+          if (i.user.id !== target.id) {
+            return await i.reply({
+              content: '❌ This proposal is not for you!',
+              ephemeral: true
+            });
+          }
+
+          if (i.customId === 'accept_marriage') {
+            // Mariage accepté
+            const marriageId = `${proposer.id}_${target.id}`;
+            const marriage = {
+              user1: proposer.id,
+              user2: target.id,
+              proposer: proposer.id,
+              date: new Date().toISOString(),
+              guild: interaction.guild.id
+            };
+
+            marriageData.marriages[marriageId] = marriage;
+            marriageData.stats.total_marriages++;
+            saveMarriageData(marriageData);
+
+            const successEmbed = new EmbedBuilder()
+              .setTitle('💒 Wedding Bells!')
+              .setDescription(`🎉 Congratulations! ${proposer} and ${target} are now married! 💕\n\nMay your love last forever! 💖`)
+              .setColor(0x00ff00)
+              .setThumbnail(target.displayAvatarURL())
+              .setTimestamp()
+              .setFooter({ text: 'Happily ever after! 💑' });
+
+            await i.update({
+              embeds: [successEmbed],
+              components: []
+            });
+
+            // Message de félicitations dans le canal
+            try {
+              await interaction.channel.send({
+                content: `🎊 **WEDDING ANNOUNCEMENT!** 🎊\n${proposer} and ${target} are now officially married! 💒💕\n\nEveryone, please congratulate the happy couple! 🎉`
+              });
+            } catch (error) {
+              console.error('Error sending wedding announcement:', error);
+            }
+
+          } else if (i.customId === 'decline_marriage') {
+            // Mariage refusé
+            const declineEmbed = new EmbedBuilder()
+              .setTitle('💔 Proposal Declined')
+              .setDescription(`${target} has declined ${proposer}'s marriage proposal.\n\nIt's okay, there are plenty of fish in the sea! 🐟`)
+              .setColor(0xff0000)
+              .setTimestamp()
+              .setFooter({ text: 'Better luck next time! 💔' });
+
+            await i.update({
+              embeds: [declineEmbed],
+              components: []
+            });
+          }
+        } catch (error) {
+          console.error('Error in button interaction:', error);
+          try {
+            await i.reply({
+              content: '❌ An error occurred while processing your response. Please try again.',
+              ephemeral: true
+            });
+          } catch (replyError) {
+            console.error('Error sending error message:', replyError);
+          }
+        }
+      });
+
+      collector.on('end', async collected => {
+        try {
+          if (collected.size === 0) {
+            const timeoutEmbed = new EmbedBuilder()
+              .setTitle('⏰ Proposal Expired')
+              .setDescription(`${target} did not respond to ${proposer}'s marriage proposal in time.`)
+              .setColor(0x808080)
+              .setTimestamp();
+
+            await interaction.editReply({
+              embeds: [timeoutEmbed],
+              components: []
+            });
+          }
+        } catch (error) {
+          console.error('Error in collector end:', error);
+        }
+      });
+
+    } catch (error) {
+      console.error('Error in marry command:', error);
+      try {
+        await interaction.reply({
+          content: '❌ An error occurred while processing the marriage proposal. Please try again.',
+          ephemeral: true
+        });
+      } catch (replyError) {
+        console.error('Error sending error message:', replyError);
+      }
+    }
   },
 };
