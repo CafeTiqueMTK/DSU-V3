@@ -2,14 +2,55 @@ const fs = require('fs');
 const path = require('path');
 
 // Chemins des fichiers de données
-const settingsPath = path.join('/data', 'settings.json');
-const warnsPath = path.join('/data', 'warns.json');
-const coinsPath = path.join('/data', 'coins.json');
-const workPath = path.join('/data', 'work.json');
+const dataDir = '/data';
+const settingsPath = path.join(dataDir, 'settings.json');
+const warnsPath = path.join(dataDir, 'warns.json');
+const coinsPath = path.join(dataDir, 'coins.json');
+const workPath = path.join(dataDir, 'work.json');
+
+// Ensure data directory exists
+function ensureDataDirectory() {
+  if (!fs.existsSync(dataDir)) {
+    try {
+      fs.mkdirSync(dataDir, { recursive: true });
+      console.log('✅ Created /data directory');
+    } catch (error) {
+      console.error('❌ Failed to create /data directory:', error.message);
+      throw error;
+    }
+  }
+}
+
+// Initialize data files if they don't exist
+function initializeDataFiles() {
+  ensureDataDirectory();
+  
+  const dataFiles = [
+    { path: settingsPath, default: '{}' },
+    { path: warnsPath, default: '{}' },
+    { path: coinsPath, default: '{}' },
+    { path: workPath, default: '{}' }
+  ];
+
+  dataFiles.forEach(file => {
+    if (!fs.existsSync(file.path)) {
+      try {
+        fs.writeFileSync(file.path, file.default);
+        console.log(`✅ Created ${path.basename(file.path)}`);
+      } catch (error) {
+        console.error(`❌ Failed to create ${path.basename(file.path)}:`, error.message);
+        throw error;
+      }
+    }
+  });
+}
 
 // Fonction pour charger les données d'un fichier
 function loadData(filePath) {
   try {
+    // Ensure data directory exists before trying to read
+    ensureDataDirectory();
+    
     if (fs.existsSync(filePath)) {
       return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
     }
@@ -22,6 +63,9 @@ function loadData(filePath) {
 // Fonction pour sauvegarder les données
 function saveData(filePath, data) {
   try {
+    // Ensure data directory exists before trying to write
+    ensureDataDirectory();
+    
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
     return true;
   } catch (error) {
@@ -33,6 +77,9 @@ function saveData(filePath, data) {
 // Fonction pour initialiser les données d'une guild
 function initializeGuildData(guildId, dataType = 'all') {
   const guildIdStr = guildId.toString();
+  
+  // Ensure data files exist before trying to use them
+  initializeDataFiles();
   
   if (dataType === 'all' || dataType === 'settings') {
     const settings = loadData(settingsPath);
@@ -297,5 +344,7 @@ module.exports = {
   saveGuildData,
   saveUserData,
   loadData,
-  saveData
+  saveData,
+  ensureDataDirectory,
+  initializeDataFiles
 }; 

@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder } = require('discord.js');
+const { getGuildData, saveGuildData } = require('../utils/guildManager');
 const fs = require('fs');
 const path = require('path');
-const settingsPath = path.join('/data', 'settings.json');
 const funnymsgPath = path.join('/data', 'funnymsg.json');
 
 module.exports = {
@@ -257,11 +257,8 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
 
-    // Load settings
-    let settings = {};
-    if (fs.existsSync(settingsPath)) {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    }
+    // Load settings using guildManager
+    const settings = getGuildData(guildId, 'settings');
 
     if (!settings[guildId]) settings[guildId] = {};
     if (!settings[guildId].funny) {
@@ -293,7 +290,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.eat.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Eat Detection Enabled' : '❌ Eat Detection Disabled')
@@ -314,7 +311,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.sleep.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Sleep Detection Enabled' : '❌ Sleep Detection Disabled')
@@ -335,7 +332,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.game.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Game Detection Enabled' : '❌ Game Detection Disabled')
@@ -356,7 +353,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.work.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Work Detection Enabled' : '❌ Work Detection Disabled')
@@ -377,7 +374,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.study.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Study Detection Enabled' : '❌ Study Detection Disabled')
@@ -398,7 +395,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.sport.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Sport Detection Enabled' : '❌ Sport Detection Disabled')
@@ -419,7 +416,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.travel.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Travel Detection Enabled' : '❌ Travel Detection Disabled')
@@ -440,7 +437,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.happy.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Happy Detection Enabled' : '❌ Happy Detection Disabled')
@@ -461,7 +458,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.tired.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Tired Detection Enabled' : '❌ Tired Detection Disabled')
@@ -482,7 +479,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.stress.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Stress Detection Enabled' : '❌ Stress Detection Disabled')
@@ -502,7 +499,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.pizza.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Pizza Detection Enabled' : '❌ Pizza Detection Disabled')
@@ -522,7 +519,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.coffee.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Coffee Detection Enabled' : '❌ Coffee Detection Disabled')
@@ -542,7 +539,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.music.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Music Detection Enabled' : '❌ Music Detection Disabled')
@@ -562,7 +559,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.concert.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Concert Detection Enabled' : '❌ Concert Detection Disabled')
@@ -582,7 +579,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.movie.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Movie Detection Enabled' : '❌ Movie Detection Disabled')
@@ -602,7 +599,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.series.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Series Detection Enabled' : '❌ Series Detection Disabled')
@@ -622,7 +619,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.birthday.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Birthday Detection Enabled' : '❌ Birthday Detection Disabled')
@@ -642,7 +639,7 @@ module.exports = {
         const enabled = action === 'enable';
         
         settings[guildId].funny.weekend.enabled = enabled;
-        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        saveGuildData(guildId, settings, 'settings');
 
         const embed = new EmbedBuilder()
           .setTitle(enabled ? '✅ Weekend Detection Enabled' : '❌ Weekend Detection Disabled')

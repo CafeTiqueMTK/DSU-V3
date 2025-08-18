@@ -1,7 +1,5 @@
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-const settingsPath = path.join('/data', 'settings.json');
+const { getGuildData, saveGuildData } = require('../utils/guildManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -30,8 +28,9 @@ module.exports = {
         .setDescription('Send a test farewell message')),
 
   async execute(interaction) {
-    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
     const guildId = interaction.guild.id;
+    const settings = getGuildData(guildId, 'settings');
+    
     if (!settings[guildId]) settings[guildId] = {};
     if (!settings[guildId].farewell) {
       settings[guildId].farewell = {
@@ -58,12 +57,12 @@ module.exports = {
 
     } else if (sub === 'enable') {
       conf.enabled = true;
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      saveGuildData(guildId, settings, 'settings');
       await interaction.reply('✅ Farewell system enabled.', { ephemeral: true });
 
     } else if (sub === 'disable') {
       conf.enabled = false;
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      saveGuildData(guildId, settings, 'settings');
       await interaction.reply('❌ Farewell system disabled.', { ephemeral: true });
 
     } else if (sub === 'setchannel') {
@@ -73,7 +72,7 @@ module.exports = {
         return;
       }
       conf.channel = channel.id;
-      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+      saveGuildData(guildId, settings, 'settings');
       await interaction.reply({ content: `📢 Farewell channel set to <#${channel.id}>.`, ephemeral: true });
 
     } else if (sub === 'test') {

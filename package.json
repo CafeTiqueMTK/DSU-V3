@@ -2,12 +2,13 @@
   "name": "dsu-v3",
   "version": "1.0.0",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node index.js",
+    "start": "node start-bot.js",
+    "dev": "node start-bot.js",
     "deploy": "node deploy-commands.js",
     "migrate": "node migrate-to-railway.js",
     "migrate-data": "node migrate-to-data-folder.js",
     "test-paths": "node test-data-paths.js",
+    "test-railway": "node test-railway.js",
     "update-paths": "node update-paths.js",
     "setup-railway": "npm run update-paths && npm run migrate && npm run migrate-data"
   },

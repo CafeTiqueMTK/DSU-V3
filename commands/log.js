@@ -1,7 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-const settingsPath = path.join('/data', 'settings.json');
+const { getGuildData, saveGuildData } = require('../utils/guildManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -34,8 +32,8 @@ module.exports = {
     const sub = interaction.options.getSubcommand();
     const guildId = interaction.guild.id;
 
-    if (!fs.existsSync(settingsPath)) fs.writeFileSync(settingsPath, '{}');
-    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+    // Use guildManager to get and manage settings
+    const settings = getGuildData(guildId, 'settings');
 
     if (!settings[guildId]) settings[guildId] = {};
     if (!settings[guildId].logs) {
@@ -156,6 +154,7 @@ module.exports = {
       }
     }
 
-    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+    // Save the updated settings using guildManager
+    saveGuildData(guildId, settings, 'settings');
   }
 };

@@ -69,16 +69,19 @@ const commandsArray = loadCommands(client, commandsPath);
 // Charger settings.json
 console.log('Loading settings.json...');
 const settingsPath = path.join('/data', 'settings.json');
-// Crée le dossier /data s'il n'existe pas
-if (!fs.existsSync('/data')) {
-  fs.mkdirSync('/data', { recursive: true });
+
+// Vérifier si le fichier existe, sinon créer un objet vide
+let settings = {};
+try {
+  if (fs.existsSync(settingsPath)) {
+    const settingsRaw = fs.readFileSync(settingsPath, 'utf-8');
+    settings = JSON.parse(settingsRaw);
+  } else {
+    console.log('Settings file not found, using empty settings');
+  }
+} catch (error) {
+  console.warn('Error loading settings, using empty settings:', error.message);
 }
-// Crée le fichier settings.json vide s'il n'existe pas
-if (!fs.existsSync(settingsPath)) {
-  fs.writeFileSync(settingsPath, '{}');
-}
-const settingsRaw = fs.readFileSync(settingsPath, 'utf-8');
-const settings = JSON.parse(settingsRaw);
 
 // Déployer les commandes
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
@@ -2414,5 +2417,32 @@ process.on('SIGINT', () => {
   updateChecker.stop();
   client.destroy();
   process.exit(0);
+});
+
+// Handle SIGTERM (Railway shutdown)
+process.on('SIGTERM', () => {
+  console.log('🛑 Received SIGTERM, shutting down gracefully...');
+  updateChecker.stop();
+  client.destroy();
+  process.exit(0);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Login with error handling
+console.log('🔐 Attempting to login...');
+client.login(DISCORD_TOKEN).catch(error => {
+  console.error('❌ Failed to login:', error);
+  process.exit(1);
 });
 
